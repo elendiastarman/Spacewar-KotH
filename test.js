@@ -1,4 +1,6 @@
 window.addEventListener("load",function(){
+	// it loaded correctly
+	console.log("test.js");
 	// setting some useful functions
 	window.logData = function(){
 		var z = [];
