@@ -1,3 +1,5 @@
-(function(heresyFunction){
-	heresyFunction(document).ready(function (){ console.log("main.js"); });
-})(eval(atob("alF1ZXJ5")));
+(function($){
+	$(document).ready(function (){ console.log("main.js"); });
+})(jquery);
+
+var svg = d3.select('svg');
