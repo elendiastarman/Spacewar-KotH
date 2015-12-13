@@ -76,10 +76,15 @@ function setup() {
 
 function updatePositions(){
 	teams.forEach(function(teamObj){
-		if (teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv > 225){
-			teamObj.xv = 15.*teamObj.xv/Math.sqrt(teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv);
-			teamObj.yv = 15.*teamObj.yv/Math.sqrt(teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv);
+		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+		if (speed > 225) {
+			teamObj.xv = 15.*teamObj.xv/Math.sqrt(speed);
+			teamObj.yv = 15.*teamObj.yv/Math.sqrt(speed);
+		} else if (speed < 0.1) {
+			teamObj.xv = 0;
+			teamObj.yv = 0;
 		}
+		
 		teamObj.x += teamObj.xv;
 		teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
 		teamObj.y += teamObj.yv;
