@@ -79,6 +79,15 @@ function updatePositions(){
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(teamObj){
+		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+		if (speed > 225) {
+			teamObj.xv = 15.*teamObj.xv/Math.sqrt(speed);
+			teamObj.yv = 15.*teamObj.yv/Math.sqrt(speed);
+		} else if (speed < 0.00) {
+			teamObj.xv = 0;
+			teamObj.yv = 0;
+		}
+		
 		var dx = teamObj.x - sun.attr('cx');
 		var dy = teamObj.y - sun.attr('cy');
 		var dis = Math.sqrt(dx*dx+dy*dy);
@@ -90,19 +99,23 @@ function updatePositions(){
 		teamObj.xv += -force*dx/dis;
 		teamObj.yv += -force*dy/dis;
 		
-		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
-		if (speed > 225) {
-			teamObj.xv = 15.*teamObj.xv/Math.sqrt(speed);
-			teamObj.yv = 15.*teamObj.yv/Math.sqrt(speed);
-		} else if (speed < 0.00) {
-			teamObj.xv = 0;
-			teamObj.yv = 0;
-		}
-		
 		teamObj.x += teamObj.xv;
 		teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
 		teamObj.y += teamObj.yv;
 		teamObj.y = (teamObj.y+fieldHeight)%fieldHeight;
+	});
+	
+	missiles.forEach(function(m){
+		var dx = m.x - sun.attr('cx');
+		var dy = m.y - sun.attr('cy');
+		var dis = Math.sqrt(dx*dx+dy*dy);
+		if (dx*dx+dy*dy > 10){
+			var force = gravityStrength / (dx*dx+dy*dy);
+		} else {
+			var force = gravityStrength;
+		}
+		m.xv += -force*dx/dis;
+		m.yv += -force*dy/dis;
 	});
 }
 
