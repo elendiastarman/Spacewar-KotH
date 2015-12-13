@@ -173,6 +173,8 @@ function handleInput(event) {
 		return;
 	}
 	
+	if (event.which == 191){ event.preventDefault(); };
+	
 	if (event.type == 'keydown'){ keystates[event.which] = true;  }
 	if (event.type == 'keyup')  { keystates[event.which] = false; }
 }
