@@ -35,7 +35,6 @@ function update() {
 	checkKeys();
 	
 	if (missiles.length){
-		// console.log("Before: "+missiles[0].x);
 		var filteredMissiles = [];
 		for (var i=0; i<missiles.length; i++) {
 			var m = missiles[i];
@@ -46,16 +45,12 @@ function update() {
 			// if (m.time
 			filteredMissiles.push(m);
 		}
-		// console.log("After: "+filteredMissiles[0].x);
 		missiles = filteredMissiles;
-		console.log(missiles.length);
-		// console.log("After: "+missiles[0].x);
 		
-		var dots = d3.select("#field").selectAll('.missile').data(missiles);//, function(d){return d;});
-		// console.log(dots);
+		var dots = d3.select("#field").selectAll('.missile').data(missiles);
 		dots.attr("cx", function(d){ return d.x; })
 			.attr("cy", function(d){ return d.y; });
-		// dots.exit().remove();
+		dots.exit().remove();
 	}
 	
 	if (red.xv*red.xv + red.yv*red.yv > 400){
@@ -106,7 +101,7 @@ function blueMove(action) {
 		blue.yv += 0.5*Math.sin(Math.radians(blue.rot-90));
 		break;
 		case "fire":
-		// fireMissile("blue");
+		fireMissile("blue");
 		break;
 		case "turn right":
 		blue.rot = blue.rot + 5;
@@ -133,11 +128,9 @@ class Missile {
 		}
 		this.name = "missile"+this.id;
 	}
-	// return this;
 }
 
 function fireMissile(color) {
-	console.log(color);
 	var mx,my,mxv,myv;
 	var p;
 	
@@ -154,9 +147,7 @@ function fireMissile(color) {
 	mxv = p.xv + 10*Math.cos(Math.radians(p.rot-90));
 	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
 	
-	var nm = new Missile(mx,my,mxv,myv);
-	missiles.push(nm);
-	// console.log(missiles.length);
+	missiles.push(new Missile(mx,my,mxv,myv));
 	
 	d3.select("#field").selectAll(".missile")
 		.data(missiles)
@@ -170,9 +161,6 @@ function fireMissile(color) {
 
 var keystates = {};
 function handleInput(event) {
-	// console.log(event.which);
-	// console.log(event.type);
-	
 	if (event.which == 27){
 		clearInterval(renderLoop);
 		renderLoop = false;
