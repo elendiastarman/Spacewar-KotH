@@ -44,14 +44,14 @@ function setup() {
 
 function updatePosition(team){
 	var teamObj = window[team];
-	if (teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv > 400){
+	if (teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv > 225){
 		teamObj.xv = 15.*teamObj.xv/Math.sqrt(teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv);
 		teamObj.yv = 15.*teamObj.yv/Math.sqrt(teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv);
 	}
 	teamObj.x += teamObj.xv;
 	teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
 	teamObj.y += teamObj.yv;
-	teamObj.y = (teamObj.y+fieldWidth)%fieldWidth;
+	teamObj.y = (teamObj.y+fieldHeight)%fieldHeight;
 }
 
 function updateGraphics(team){
