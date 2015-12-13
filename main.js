@@ -38,12 +38,13 @@ function update() {
 		var filteredMissiles = [];
 		for (var i=0; i<missiles.length; i++) {
 			var m = missiles[i];
-			m.x += m.xv;
-			m.x = (m.x+800)%800;
-			m.y += m.yv;
-			m.y = (m.y+600)%600;
-			// if (m.time
-			filteredMissiles.push(m);
+			if (new Date() - m.time < 2250){
+				m.x += m.xv;
+				m.x = (m.x+800)%800;
+				m.y += m.yv;
+				m.y = (m.y+600)%600;
+				filteredMissiles.push(m);
+			}
 		}
 		missiles = filteredMissiles;
 		
@@ -148,7 +149,7 @@ function fireMissile(color) {
 	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
 	
 	// missiles.push(new Missile(mx,my,mxv,myv));
-	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv});
+	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date()});
 	missiles[missiles.length-1]['id'] = missiles.length;
 	
 	d3.select("#field").selectAll(".missile")
