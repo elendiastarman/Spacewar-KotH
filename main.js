@@ -35,6 +35,7 @@ function update() {
 	red.y += red.yv;
 	red.y = (red.y+600)%600;
 	d3.select('#red').attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
+	d3.select('#blue').attr("transform","translate("+blue.x+","+blue.y+"),rotate("+blue.rot+")");
 }
 
 function redMove(action) {
