@@ -15,7 +15,7 @@ function setup() {
 	red.x = 50;
 	red.y = Math.floor(500*Math.random())+50;
 	red.rot = 90;
-	red.xv = 10;
+	red.xv = 1;
 	red.yv = 0;
 	red.attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 	
@@ -64,34 +64,40 @@ function handleInput(event) {
 		// general
 		case 27:
 		clearInterval(renderLoop);
+		renderLoop = false;
 		break;
 		case 13:
 		event.preventDefault();
-		renderLoop = setInterval(update, 30);
+		if (!renderLoop){ renderLoop = setInterval(update, 30); }
 		break
 		
 		// RED
-		case 122:
+		case 90:
+		redMove("turn left");
 		break;
-		case 120:
+		case 88:
+		redMove("turn right");
 		break;
-		case 99:
+		case 67:
+		redMove("hyperspace");
 		break;
-		case 118:
+		case 86:
+		redMove("thrust");
 		break;
-		case 98:
+		case 66:
+		redMove("fire");
 		break;
 		
 		// BLUE
-		case 110:
+		case 78:
 		break;
-		case 109:
+		case 77:
 		break;
-		case 44:
+		case 188:
 		break;
-		case 46:
+		case 190:
 		break;
-		case 47:
+		case 191:
 		break;
 	}
 }
