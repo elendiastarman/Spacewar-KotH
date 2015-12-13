@@ -93,7 +93,7 @@ function teamMove(team,action) {
 	var teamObj = window[team];
 	switch (action){
 		case "thrust":
-			teamObj.xv += 0.5*Math.cos(Math.radians(teamObj));
+			teamObj.xv += 0.5*Math.cos(Math.radians(teamObj.rot-90));
 			teamObj.yv += 0.5*Math.sin(Math.radians(teamObj.rot-90));
 			break;
 		case "fire":
