@@ -65,6 +65,10 @@ function handleInput(event) {
 		case 27:
 		clearInterval(renderLoop);
 		break;
+		case 13:
+		event.preventDefault();
+		renderLoop = setInterval(update, 30);
+		break
 		
 		// RED
 		case 122:
