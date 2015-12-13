@@ -15,14 +15,15 @@ var SCALE = 1.0;
 
 window["red"] = {"color":"red"};
 window["blue"] = {"color":"blue"};
+var teams = [window["red"], window["blue"]];
 
 var field;
-var teams = [window["red"], window["blue"]];
+var fieldWidth = 800;
+var fieldHeight = 600;
 
 var missileTimeout = 2250;
 var fireRateLimit = 100;
-var fieldWidth = 800;
-var fieldHeight = 600;
+var gravityStrength = 10000;
 
 Math.radians = function(degrees) {
 	return degrees * Math.PI / 180;
@@ -75,12 +76,25 @@ function setup() {
 }
 
 function updatePositions(){
+	var sun = d3.select('#sun');
+	
 	teams.forEach(function(teamObj){
+		var dx = teamObj.x - sun.attr('cx');
+		var dy = teamObj.y - sun.attr('cy');
+		var dis = Math.sqrt(dx*dx+dy*dy);
+		if (dx*dx+dy*dy > 10){
+			var force = gravityStrength / (dx*dx+dy*dy);
+		} else {
+			var force = gravityStrength;
+		}
+		teamObj.xv += -force*dx/dis;
+		teamObj.yv += -force*dy/dis;
+		
 		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
 		if (speed > 225) {
 			teamObj.xv = 15.*teamObj.xv/Math.sqrt(speed);
 			teamObj.yv = 15.*teamObj.yv/Math.sqrt(speed);
-		} else if (speed < 0.1) {
+		} else if (speed < 0.00) {
 			teamObj.xv = 0;
 			teamObj.yv = 0;
 		}
