@@ -115,20 +115,20 @@ function blueMove(action) {
 }
 
 var missiles = [];
-class Missile {
-	constructor(x,y,xv,yv) {
-		this.x = x;
-		this.y = y;
-		this.xv = xv;
-		this.yv = yv;
-		if (missiles.length > 0){
-			this.id = missiles[missiles.length-1].id + 1;
-		} else {
-			this.id = 1;
-		}
-		this.name = "missile"+this.id;
-	}
-}
+// class Missile {
+	// constructor(x,y,xv,yv) {
+		// this.x = x;
+		// this.y = y;
+		// this.xv = xv;
+		// this.yv = yv;
+		// if (missiles.length > 0){
+			// this.id = missiles[missiles.length-1].id + 1;
+		// } else {
+			// this.id = 1;
+		// }
+		// this.name = "missile"+this.id;
+	// }
+// }
 
 function fireMissile(color) {
 	var mx,my,mxv,myv;
@@ -147,7 +147,9 @@ function fireMissile(color) {
 	mxv = p.xv + 10*Math.cos(Math.radians(p.rot-90));
 	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
 	
-	missiles.push(new Missile(mx,my,mxv,myv));
+	// missiles.push(new Missile(mx,my,mxv,myv));
+	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv});
+	missiles[missiles.length-1]['id'] = missiles.length;
 	
 	d3.select("#field").selectAll(".missile")
 		.data(missiles)
