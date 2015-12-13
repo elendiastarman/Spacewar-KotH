@@ -1,3 +1,5 @@
+"use strict";
+
 var renderLoop;
 (function($){
 	$(document).ready(function (){
@@ -11,6 +13,7 @@ var renderLoop;
 
 var red = d3.select("#red");
 var blue = d3.select("#blue");
+var field = d3.select('#field');
 
 function setup() {
 	red.x = 50.;
@@ -31,6 +34,29 @@ function setup() {
 function update() {
 	checkKeys();
 	
+	if (missiles.length){
+		// console.log("Before: "+missiles[0].x);
+		var filteredMissiles = [];
+		for (var i=0; i<missiles.length; i++) {
+			var m = missiles[i];
+			m.x += m.xv;
+			m.x = (m.x+800)%800;
+			m.y += m.yv;
+			m.y = (m.y+600)%600;
+			// if (m.time
+			filteredMissiles.push(m);
+		}
+		// console.log("After: "+filteredMissiles[0].x);
+		missiles = filteredMissiles;
+		console.log(missiles.length);
+		// console.log("After: "+missiles[0].x);
+		
+		var dots = d3.select("#field").selectAll('.missile').data(missiles);//, function(d){return d;});
+		// console.log(dots);
+		dots.attr("cx", function(d){ return d.x; })
+			.attr("cy", function(d){ return d.y; });
+		// dots.exit().remove();
+	}
 	
 	if (red.xv*red.xv + red.yv*red.yv > 400){
 		red.xv = 15.*red.xv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
@@ -60,7 +86,7 @@ function redMove(action) {
 		red.yv += 0.5*Math.sin(Math.radians(red.rot-90));
 		break;
 		case "fire":
-		// fireMissile("red");
+		fireMissile("red");
 		break;
 		case "turn right":
 		red.rot = red.rot + 5;
@@ -91,6 +117,55 @@ function blueMove(action) {
 		case "hyperspace":
 		break;
 	}
+}
+
+var missiles = [];
+class Missile {
+	constructor(x,y,xv,yv) {
+		this.x = x;
+		this.y = y;
+		this.xv = xv;
+		this.yv = yv;
+		if (missiles.length > 0){
+			this.id = missiles[missiles.length-1].id + 1;
+		} else {
+			this.id = 1;
+		}
+		this.name = "missile"+this.id;
+	}
+	// return this;
+}
+
+function fireMissile(color) {
+	console.log(color);
+	var mx,my,mxv,myv;
+	var p;
+	
+	switch (color) {
+		case "red":
+		p = red;
+		break;
+		case "blue":
+		p = blue;
+		break;
+	}
+	mx = p.x;
+	my = p.y;
+	mxv = p.xv + 10*Math.cos(Math.radians(p.rot-90));
+	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
+	
+	var nm = new Missile(mx,my,mxv,myv);
+	missiles.push(nm);
+	// console.log(missiles.length);
+	
+	d3.select("#field").selectAll(".missile")
+		.data(missiles)
+	  .enter().append("circle")
+		.attr("cx", function(d){ return d.x; })
+		.attr("cy", function(d){ return d.y; })
+		.attr("r", 2)
+		.style("fill","white")
+		.attr("class", "missile");
 }
 
 var keystates = {};
