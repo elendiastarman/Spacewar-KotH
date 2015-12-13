@@ -4,6 +4,7 @@ var renderLoop;
 		console.log("main.js");
 		setup();
 		renderLoop = setInterval(update, 30);
+		$(document).keydown(handleInput);
 	});
 })(jQuery);
 
@@ -27,24 +28,65 @@ function setup() {
 }
 
 function update() {
-	red.x = red.x + red.xv;
-	if (red.x > 800) { red.x -= 800 } else if (red.x < 0) { red.x += 800 }
-	red.y = red.y + red.yv;
-	red.rot = red.rot + 5;
+	if (red.xv > 10){ red.xv = 10 } else if (red.xv < 0){red.xv = 0}
+	if (red.yv > 10){ red.yv = 10 } else if (red.yv < 0){red.yv = 0}
+	red.x += red.xv;
+	red.x = (red.x+800)%800;
+	red.y += red.yv;
+	red.y = (red.y+600)%600;
 	d3.select('#red').attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 }
 
 function redMove(action) {
 	switch (action){
 		case "thrust":
+		red.xv += Math.cos(red.rot);
+		red.yv += Math.sin(red.rot);
 		break;
 		case "fire":
+		// fireMissile("red");
 		break;
 		case "turn right":
+		red.rot = red.rot + 5;
 		break;
 		case "turn left":
+		red.rot = red.rot - 5;
 		break;
 		case "hyperspace":
+		break;
+	}
+}
+
+function handleInput(event) {
+	console.log(event.which);
+	switch (event.which){
+		// general
+		case 27:
+		clearInterval(renderLoop);
+		break;
+		
+		// RED
+		case 122:
+		break;
+		case 120:
+		break;
+		case 99:
+		break;
+		case 118:
+		break;
+		case 98:
+		break;
+		
+		// BLUE
+		case 110:
+		break;
+		case 109:
+		break;
+		case 44:
+		break;
+		case 46:
+		break;
+		case 47:
 		break;
 	}
 }
