@@ -15,6 +15,7 @@ window["red"] = {};
 window["blue"] = {};
 var field = d3.select('#field');
 var missileTimeout = 2250;
+var fireRateLimit = 100;
 var fieldWidth = 800;
 var fieldHeight = 600;
 Math.radians = function(degrees) {
@@ -30,6 +31,8 @@ function setup() {
 	red.rot = 90;
 	red.xv = 0.0;
 	red.yv = 0.0;
+	red.fireTime = new Date() - 1000;
+	red.missileReady = true;
 	updateGraphics("red");
 	//red.attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 	
@@ -38,6 +41,8 @@ function setup() {
 	blue.rot = -90;
 	blue.xv = 0.0;
 	blue.yv = 0.0;
+	blue.fireTime = new Date() - 1000;
+	blue.missileReady = true;
 	updateGraphics("blue");
 	//blue.attr("transform","translate("+blue.x+","+blue.y+"),rotate("+blue.rot+")");
 }
@@ -163,7 +168,15 @@ function handleInput(event) {
 	if (event.which == 191){ event.preventDefault(); };
 	
 	if (event.type == 'keydown'){ keystates[event.which] = true;  }
-	if (event.type == 'keyup')  { keystates[event.which] = false; }
+	if (event.type == 'keyup')  {
+		keystates[event.which] = false;
+		
+		if (event.which == 66) {
+			window["red"].missileReady = true;
+		} else if (event.which == 191) {
+			window["blue"].missileReady = true;
+		}
+	}
 }
 
 var keysOfInterest = [
@@ -188,7 +201,11 @@ function checkKeys() {
 					teamMove("red","thrust");
 					break;
 				case 66:
-					teamMove("red","fire");
+					if (new Date() - window["red"].fireTime > fireRateLimit && window["red"].missileReady) {
+						teamMove("red","fire");
+						window["red"].fireTime = new Date();
+						window["red"].missileReady = false;
+					}
 					break;
 				
 				// BLUE
@@ -206,6 +223,11 @@ function checkKeys() {
 					break;
 				case 191:
 					teamMove("blue","fire");
+					if (new Date() - window["blue"].fireTime > fireRateLimit && window["blue"].missileReady) {
+						teamMove("blue","fire");
+						window["blue"].fireTime = new Date();
+						window["blue"].missileReady = false;
+					}
 					break;
 			}
 		}
