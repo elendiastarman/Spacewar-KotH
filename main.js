@@ -27,10 +27,11 @@ function setup() {
 }
 
 function update() {
-	red.x = red.x + red.xv;
+	red.x += red.xv;
 	if (red.x > 800) { red.x -= 800 } else if (red.x < 0) { red.x += 800 }
-	red.y = red.y + red.yv;
-	red.rot = red.rot + 5;
+	red.y += red.yv;
+	red.rot += 5;
+	blue.rot += 5;
 	d3.select('#red').attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 }
 
