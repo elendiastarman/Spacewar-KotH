@@ -148,7 +148,7 @@ function fireMissile(team) {
 	  .enter().append("circle")
 		.attr("cx", function(d){ return d.x; })
 		.attr("cy", function(d){ return d.y; })
-		.attr("r", 2)
+		.attr("r", 1.5)
 		.style("fill","white")
 		.attr("class", "missile");
 }
