@@ -24,6 +24,8 @@ var fieldHeight = 600;
 var missileTimeout = 2250;
 var fireRateLimit = 100;
 var gravityStrength = 10000;
+var speedLimit = 15; //user
+var maxSpeed = 40; //gravity-boosted
 
 Math.radians = function(degrees) {
 	return degrees * Math.PI / 180;
@@ -79,15 +81,6 @@ function updatePositions(){
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(teamObj){
-		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
-		if (speed > 225) {
-			teamObj.xv = 15.*teamObj.xv/Math.sqrt(speed);
-			teamObj.yv = 15.*teamObj.yv/Math.sqrt(speed);
-		} else if (speed < 0.00) {
-			teamObj.xv = 0;
-			teamObj.yv = 0;
-		}
-		
 		var dx = teamObj.x - sun.attr('cx');
 		var dy = teamObj.y - sun.attr('cy');
 		var dis = Math.sqrt(dx*dx+dy*dy);
@@ -99,6 +92,12 @@ function updatePositions(){
 		teamObj.xv += -force*dx/dis;
 		teamObj.yv += -force*dy/dis;
 		
+		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+		if (speed > maxSpeed*maxSpeed) {
+			teamObj.xv = maxSpeed*teamObj.xv/Math.sqrt(speed);
+			teamObj.yv = maxSpeed*teamObj.yv/Math.sqrt(speed);
+		}
+		
 		teamObj.x += teamObj.xv;
 		teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
 		teamObj.y += teamObj.yv;
@@ -109,19 +108,24 @@ function updatePositions(){
 		var dx = m.x - sun.attr('cx');
 		var dy = m.y - sun.attr('cy');
 		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dx*dx+dy*dy > 10){
+		if (dx*dx+dy*dy > 100){
 			var force = gravityStrength / (dx*dx+dy*dy);
 		} else {
-			var force = gravityStrength;
+			var force = gravityStrength/100;
 		}
 		m.xv += -force*dx/dis;
 		m.yv += -force*dy/dis;
+		
+		var speed = m.xv*m.xv + m.yv*m.yv;
+		if (speed > maxSpeed*maxSpeed*2) {
+			m.xv = 1.414*maxSpeed*m.xv/Math.sqrt(speed);
+			m.yv = 1.414*maxSpeed*m.yv/Math.sqrt(speed);
+		}
 	});
 }
 
 function updateGraphics(team){
 	teams.forEach(function(teamObj){
-		// console.log(teamObj);
 		d3.select("#"+teamObj.color).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
 	});
 }
@@ -157,8 +161,7 @@ function teamMove(team,action) {
 	var teamObj = window[team];
 	switch (action){
 		case "thrust":
-			teamObj.xv += 0.5*Math.cos(Math.radians(teamObj.rot-90));
-			teamObj.yv += 0.5*Math.sin(Math.radians(teamObj.rot-90));
+			fireEngine(team);
 			break;
 		case "fire":
 			fireMissile(team);
@@ -171,6 +174,25 @@ function teamMove(team,action) {
 			break;
 		case "hyperspace":
 			break;
+	}
+}
+
+function fireEngine(team) {
+	var teamObj = window[team];
+	var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+	
+	var nxv = teamObj.xv + 0.5*Math.cos(Math.radians(teamObj.rot-90));
+	var nyv = teamObj.yv + 0.5*Math.sin(Math.radians(teamObj.rot-90));
+	var speed2 = nxv*nxv + nyv*nyv;
+	
+	if (speed < speedLimit*speedLimit || speed2 < speed) { //either slow enough or slowing down
+		teamObj.xv = nxv;
+		teamObj.yv = nyv;
+		
+		if (speed2 > speed && speed2 > speedLimit*speedLimit) {
+			teamObj.xv = speedLimit*teamObj.xv/Math.sqrt(speed2);
+			teamObj.yv = speedLimit*teamObj.yv/Math.sqrt(speed2);
+		}
 	}
 }
 
