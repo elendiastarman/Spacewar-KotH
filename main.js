@@ -222,7 +222,6 @@ function checkKeys() {
 					teamMove("blue","thrust");
 					break;
 				case 191:
-					teamMove("blue","fire");
 					if (new Date() - window["blue"].fireTime > fireRateLimit && window["blue"].missileReady) {
 						teamMove("blue","fire");
 						window["blue"].fireTime = new Date();
