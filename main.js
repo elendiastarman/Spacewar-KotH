@@ -11,8 +11,8 @@ var renderLoop;
 	});
 })(jQuery);
 
-var red = d3.select("#red");
-var blue = d3.select("#blue");
+window["red"] = {};
+window["blue"] = {};
 var field = d3.select('#field');
 var missileTimeout = 2250;
 var fieldWidth = 800;
@@ -56,7 +56,7 @@ function updatePosition(team){
 
 function updateGraphics(team){
 	var teamObj = window[team];
-	d3.select(team).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
+	d3.select("#"+team).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
 }
 
 function update() {
@@ -70,7 +70,7 @@ function update() {
 				m.x += m.xv;
 				m.x = (m.x+fieldWidth)%fieldWidth;
 				m.y += m.yv;
-				m.y = (m.y+600)%600;
+				m.y = (m.y+fieldHeight)%fieldHeight;
 				filteredMissiles.push(m);
 			}
 		}
@@ -93,7 +93,7 @@ function teamMove(team,action) {
 	var teamObj = window[team];
 	switch (action){
 		case "thrust":
-			teamObj.xv += 0.5*Math.cos(Math.radians(teamObj));
+			teamObj.xv += 0.5*Math.cos(Math.radians(teamObj.rot-90));
 			teamObj.yv += 0.5*Math.sin(Math.radians(teamObj.rot-90));
 			break;
 		case "fire":
