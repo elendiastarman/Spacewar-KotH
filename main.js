@@ -23,7 +23,7 @@ var fieldHeight = 600;
 
 var missileTimeout = 2250;
 var fireRateLimit = 100;
-var gravityStrength = 10000;
+var gravityStrength = 8000;
 var speedLimit = 15; //user
 var maxSpeed = 40; //gravity-boosted
 
@@ -181,8 +181,8 @@ function fireEngine(team) {
 	var teamObj = window[team];
 	var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
 	
-	var nxv = teamObj.xv + 0.5*Math.cos(Math.radians(teamObj.rot-90));
-	var nyv = teamObj.yv + 0.5*Math.sin(Math.radians(teamObj.rot-90));
+	var nxv = teamObj.xv + 0.35*Math.cos(Math.radians(teamObj.rot-90));
+	var nyv = teamObj.yv + 0.35*Math.sin(Math.radians(teamObj.rot-90));
 	var speed2 = nxv*nxv + nyv*nyv;
 	
 	if (speed < speedLimit*speedLimit || speed2 < speed) { //either slow enough or slowing down
