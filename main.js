@@ -56,7 +56,7 @@ function updatePosition(team){
 
 function updateGraphics(team){
 	var teamObj = window[team];
-	d3.select(team).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")")l
+	d3.select(team).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
 }
 
 function update() {
