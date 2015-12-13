@@ -17,6 +17,6 @@ window.addEventListener("load",function(){
 		document.body.innerHTML += "<p>"+z.join(" ")+"</p>";
 	}
 	// testing
-	logData([1,2],"3",4,Math.PI,[1,2,"3",[3,4]]);
-	logMessage("Success!");
+	//logData([1,2],"3",4,Math.PI,[1,2,"3",[3,4]]);
+	//logMessage("Success!");
 });
