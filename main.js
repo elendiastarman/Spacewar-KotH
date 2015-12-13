@@ -5,6 +5,7 @@ var renderLoop;
 		setup();
 		renderLoop = setInterval(update, 30);
 		$(document).keydown(handleInput);
+		$(document).keyup(handleInput);
 	});
 })(jQuery);
 
@@ -28,8 +29,13 @@ function setup() {
 }
 
 function update() {
-	if (red.xv > 10){ red.xv = 10 } else if (red.xv < 0){red.xv = 0}
-	if (red.yv > 10){ red.yv = 10 } else if (red.yv < 0){red.yv = 0}
+	checkKeys();
+	
+	
+	if (red.xv*red.xv + red.yv*red.yv > 100){
+		red.xv = 10*red.xv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
+		red.yv = 10*red.yv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
+	}
 	red.x += red.xv;
 	red.x = (red.x+800)%800;
 	red.y += red.yv;
@@ -41,8 +47,8 @@ function update() {
 function redMove(action) {
 	switch (action){
 		case "thrust":
-		red.xv += Math.cos(red.rot);
-		red.yv += Math.sin(red.rot);
+		red.xv += 0.5*Math.cos(Math.radians(red.rot-90));
+		red.yv += 0.5*Math.sin(Math.radians(red.rot-90));
 		break;
 		case "fire":
 		// fireMissile("red");
@@ -58,48 +64,66 @@ function redMove(action) {
 	}
 }
 
+var keystates = {};
 function handleInput(event) {
-	console.log(event.which);
-	switch (event.which){
-		// general
-		case 27:
+	// console.log(event.which);
+	// console.log(event.type);
+	
+	if (event.which == 27){
 		clearInterval(renderLoop);
 		renderLoop = false;
-		break;
-		case 13:
+		return;
+	} else if (event.which == 13){
 		event.preventDefault();
 		if (!renderLoop){ renderLoop = setInterval(update, 30); }
-		break
-		
-		// RED
-		case 90:
-		redMove("turn left");
-		break;
-		case 88:
-		redMove("turn right");
-		break;
-		case 67:
-		redMove("hyperspace");
-		break;
-		case 86:
-		redMove("thrust");
-		break;
-		case 66:
-		redMove("fire");
-		break;
-		
-		// BLUE
-		case 78:
-		break;
-		case 77:
-		break;
-		case 188:
-		break;
-		case 190:
-		break;
-		case 191:
-		break;
+		return;
 	}
+	
+	if (event.type == 'keydown'){ keystates[event.which] = true;  }
+	if (event.type == 'keyup')  { keystates[event.which] = false; }
 }
 
-// var svg = d3.select('svg');
+var keysOfInterest = [90,88,67,86,66, 78,77,188,190,191];
+function checkKeys() {
+	keysOfInterest.forEach(function(k){
+		if (keystates[k]){
+			switch (k){
+				// RED
+				case 90:
+				redMove("turn left");
+				break;
+				case 88:
+				redMove("turn right");
+				break;
+				case 67:
+				redMove("hyperspace");
+				break;
+				case 86:
+				redMove("thrust");
+				break;
+				case 66:
+				redMove("fire");
+				break;
+				
+				// BLUE
+				case 78:
+				break;
+				case 77:
+				break;
+				case 188:
+				break;
+				case 190:
+				break;
+				case 191:
+				break;
+			}
+		}
+	});
+}
+
+Math.radians = function(degrees) {
+	return degrees * Math.PI / 180;
+};
+Math.degrees = function(radians) {
+	return radians * 180 / Math.PI;
+};
