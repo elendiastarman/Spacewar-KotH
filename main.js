@@ -27,7 +27,6 @@ function setup() {
 }
 
 function update() {
-	console.log("update function says hi");
 	red.x = red.x + red.xv;
 	if (red.x > 800) { red.x -= 800 } else if (red.x < 0) { red.x += 800 }
 	red.y = red.y + red.yv;
