@@ -1,4 +1,22 @@
-function Field(width,height){
+function Player(){
+	if(red.assigned){
+		if(blue.assigned){
+			return null;
+		}
+		blue.assigned = true;
+		this.team = "blue";
+		this.ship = blue;
+	} else {
+		this.team = "red";
+		this.ship = red;
+		red.assigned = true;
+	}
+	Player.players.push(this);
+}
+
+Player.players = [];
+
+/*function Field(width,height){
 	this.width      = width;
 	this.height     = height;
 	this.players    = [];
@@ -39,4 +57,4 @@ var sendMissle = new Action("fire",{});
 function Player(name,frameFunction){
 	this.name       = name;
 	this.frame      = frameFunction;
-}
+}*/
