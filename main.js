@@ -13,18 +13,18 @@ var red = d3.select("#red");
 var blue = d3.select("#blue");
 
 function setup() {
-	red.x = 50;
+	red.x = 50.;
 	red.y = Math.floor(500*Math.random())+50;
 	red.rot = 90;
-	red.xv = 1;
-	red.yv = 0;
+	red.xv = 0.0;
+	red.yv = 0.0;
 	red.attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 	
-	blue.x = 800-50;
+	blue.x = 800-50.;
 	blue.y = Math.floor(500*Math.random())+50;
 	blue.rot = -90;
-	blue.xv = 0;
-	blue.yv = 0;
+	blue.xv = 0.0;
+	blue.yv = 0.0;
 	blue.attr("transform","translate("+blue.x+","+blue.y+"),rotate("+blue.rot+")");
 }
 
@@ -32,15 +32,24 @@ function update() {
 	checkKeys();
 	
 	
-	if (red.xv*red.xv + red.yv*red.yv > 100){
-		red.xv = 10*red.xv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
-		red.yv = 10*red.yv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
+	if (red.xv*red.xv + red.yv*red.yv > 400){
+		red.xv = 15.*red.xv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
+		red.yv = 15.*red.yv/Math.sqrt(red.xv*red.xv + red.yv*red.yv);
 	}
 	red.x += red.xv;
 	red.x = (red.x+800)%800;
 	red.y += red.yv;
 	red.y = (red.y+600)%600;
 	d3.select('#red').attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
+	
+	if (blue.xv*blue.xv + blue.yv*blue.yv > 400){
+		blue.xv = 15.*blue.xv/Math.sqrt(blue.xv*blue.xv + blue.yv*blue.yv);
+		blue.yv = 15.*blue.yv/Math.sqrt(blue.xv*blue.xv + blue.yv*blue.yv);
+	}
+	blue.x += blue.xv;
+	blue.x = (blue.x+800)%800;
+	blue.y += blue.yv;
+	blue.y = (blue.y+600)%600;
 	d3.select('#blue').attr("transform","translate("+blue.x+","+blue.y+"),rotate("+blue.rot+")");
 }
 
@@ -58,6 +67,26 @@ function redMove(action) {
 		break;
 		case "turn left":
 		red.rot = red.rot - 5;
+		break;
+		case "hyperspace":
+		break;
+	}
+}
+
+function blueMove(action) {
+	switch (action){
+		case "thrust":
+		blue.xv += 0.5*Math.cos(Math.radians(blue.rot-90));
+		blue.yv += 0.5*Math.sin(Math.radians(blue.rot-90));
+		break;
+		case "fire":
+		// fireMissile("blue");
+		break;
+		case "turn right":
+		blue.rot = blue.rot + 5;
+		break;
+		case "turn left":
+		blue.rot = blue.rot - 5;
 		break;
 		case "hyperspace":
 		break;
@@ -107,14 +136,19 @@ function checkKeys() {
 				
 				// BLUE
 				case 78:
+				blueMove("turn left");
 				break;
 				case 77:
+				blueMove("turn right");
 				break;
 				case 188:
+				blueMove("hyperspace");
 				break;
 				case 190:
+				blueMove("thrust");
 				break;
 				case 191:
+				blueMove("fire");
 				break;
 			}
 		}
