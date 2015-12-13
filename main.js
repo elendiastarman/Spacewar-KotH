@@ -34,8 +34,6 @@ function update() {
 	blue.rot += 5;
 	d3.select('#red').attr("transform","translate("+red.x+","+red.y+"),rotate("+red.rot+")");
 	d3.select('#blue').attr("transform","translate("+blue.x+","+blue.y+"),rotate("+blue.rot+")");
-	logData(red);
-	logData(blue);
 }
 
 function redMove(action) {
