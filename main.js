@@ -156,11 +156,19 @@ function update() {
 		for (var i=0; i<missiles.length; i++) {
 			var m = missiles[i];
 			if (new Date() - m.time < missileTimeout){
-				m.x += m.xv;
-				m.x = (m.x+fieldWidth)%fieldWidth;
-				m.y += m.yv;
-				m.y = (m.y+fieldHeight)%fieldHeight;
-				filteredMissiles.push(m);
+				m.nx = m.x + m.xv;
+				m.ny = m.y + m.yv;
+				checkMissileCollision(m, "sun");
+				//checkMissileCollision(m, "red");
+				//checkMissileCollision(m, "blue");
+				
+				if (m.live) {
+					m.x += m.xv;
+					m.x = (m.x+fieldWidth)%fieldWidth;
+					m.y += m.yv;
+					m.y = (m.y+fieldHeight)%fieldHeight;
+					filteredMissiles.push(m);
+				}
 			}
 		}
 		missiles = filteredMissiles;
@@ -242,7 +250,7 @@ function fireMissile(team) {
 	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
 	
 	// missiles.push(new Missile(mx,my,mxv,myv));
-	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date()});
+	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
 	missiles[missiles.length-1]['id'] = missiles.length;
 	
 	d3.select("#field").selectAll(".missile")
@@ -253,6 +261,69 @@ function fireMissile(team) {
 		.attr("r", 1.5)
 		.style("fill","white")
 		.attr("class", "missile");
+}
+
+function checkMissileCollision(m, obj) {
+	if (obj === "sun") {
+		var points = [];
+		var cx = parseInt(d3.select("#sun").attr("cx"));
+		var cy = parseInt(d3.select("#sun").attr("cy"));
+		var r = parseInt(d3.select("#sun").attr("r"));
+		for (var i=0; i<8; i++) {
+			var px = cx+r*Math.cos(i*Math.PI/4);
+			var py = cy+r*Math.sin(i*Math.PI/4);
+			points.push([px,py]);
+		}
+	}
+	
+	var L1 = [[m.x,m.y],[m.nx,m.ny]];
+	var len = points.length;
+	
+	//if (Math.abs(m.nx - cx) <= 5 && Math.abs(m.ny - cy) <= 5) { debugger; }
+	
+	for (var i=0; i<len; i++) {
+		var L2 = [[points[i][0],points[i][1]], [points[(i+1)%len][0],points[(i+1)%len][1]]];
+		var intersection = lineIntersection(L1, L2);
+		
+		if (intersection.length) {
+			if (obj === "red") {
+			} else if (obj === "blue") {
+			} else if (obj === "sun") {
+				console.log("???");
+				m.live = false;
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+function lineIntersection(L1, L2) {
+	// from http://stackoverflow.com/a/565282/1473772
+	var p = L1[0];
+	var r = [L1[1][0]-L1[0][0], L1[1][1]-L1[0][1]];
+	var q = L2[0];
+	var s = [L2[1][0]-L2[0][0], L2[1][1]-L2[0][1]];
+	
+	var rcs = r[0]*s[1] - s[0]*r[1]; //r cross s
+	var qmp = [q[0]-p[0],q[1]-p[1]]; //q minus p
+	var qmpcr = qmp[0]*r[1] - r[0]*qmp[1]; //(q minus p) cross r
+	var qmpcs = qmp[0]*s[1] - s[0]*qmp[1]; //(q minus p) cross s
+	
+	if (rcs === 0) { //they're parallel/colinear
+		return []; //I'm just going to assume that overlapping colinear lines don't happen
+	} else { //not parallel
+		var t = qmpcs/rcs;
+		var u = qmpcr/rcs;
+		
+		if (0 <= t && t <= 1 && 0 <= u && u <= 1) { //intersection exists
+			var intx = p[0] + t*r[0];
+			var inty = p[1] + t*r[1];
+			return [[intx,inty],[t,u]];
+		} else { //no intersection
+			return [];
+		}
+	}
 }
 
 var keystates = {};
