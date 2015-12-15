@@ -17,13 +17,19 @@ window["red"] = {"color":"red"};
 window["blue"] = {"color":"blue"};
 var teams = [window["red"], window["blue"]];
 
+var shipShapes = {
+	'full ship': [[-8,16],[0,-8],[8,16]],
+	'left wing': [[-8,16],[0,-8],[4,4],[0,8],[0,16]],
+	'right wing':[[-4,4],[0,-8],[8,16],[0,16],[0,8]],
+	'nose only': [[-4,4],[0,-8],[4,4],[0,8]]}
+
 var field;
 var fieldWidth = 800;
 var fieldHeight = 600;
 
 var missileTimeout = 2250;
 var fireRateLimit = 100;
-var gravityStrength = 8000;
+var gravityStrength = 0*6000;
 var speedLimit = 15; //user
 var maxSpeed = 40; //gravity-boosted
 
@@ -53,7 +59,7 @@ function setup() {
 		.attr("id","sun");
 	
 	d3.select('svg').selectAll(".ship").data(teams).enter().append("polygon")
-		.attr("points",-8*SCALE+","+16*SCALE+" 0,"+-8*SCALE+" "+8*SCALE+","+16*SCALE)
+		// .attr("points",-8*SCALE+","+16*SCALE+" 0,"+-8*SCALE+" "+8*SCALE+","+16*SCALE)
 		.attr("id", function(d){console.log(d.color); return d.color;})
 		.attr("fill", function(d){return d.color;})
 		.attr("class", "ship");
@@ -65,6 +71,8 @@ function setup() {
 	red.yv = 0.0;
 	red.fireTime = new Date() - 1000;
 	red.missileReady = true;
+	red.updateShape = true;
+	red.shape = "left wing";
 	
 	blue.x = fieldWidth-50;
 	blue.y = Math.floor((fieldHeight-100)*Math.random())+50;
@@ -73,6 +81,8 @@ function setup() {
 	blue.yv = 0.0;
 	blue.fireTime = new Date() - 1000;
 	blue.missileReady = true;
+	blue.updateShape = true;
+	blue.shape = "nose only";
 	
 	updateGraphics();
 }
@@ -127,6 +137,14 @@ function updatePositions(){
 function updateGraphics(team){
 	teams.forEach(function(teamObj){
 		d3.select("#"+teamObj.color).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
+		
+		if (teamObj.updateShape) {
+			var pointsStr = "";
+			shipShapes[teamObj.shape].forEach(function(point){
+				pointsStr += point[0]*SCALE+","+point[1]*SCALE+" ";
+			});
+			d3.select("#"+teamObj.color).attr("points",pointsStr);
+		}
 	});
 }
 
