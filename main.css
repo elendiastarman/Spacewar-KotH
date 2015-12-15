@@ -1,0 +1,17 @@
+html {
+	font-family: "Gadugi", "Constantia", "Arial", sans-serif;
+}
+
+body {
+	margin: 10px;
+	margin-top: -10px;
+	padding: 0px;
+}
+
+table {
+	text-align: center;
+	border-collapse: collapse;
+}
+td {
+	margin: 5px;
+}
