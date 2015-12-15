@@ -29,7 +29,7 @@ var fieldHeight = 600;
 
 var missileTimeout = 2250;
 var fireRateLimit = 100;
-var gravityStrength = 0*6000;
+var gravityStrength = 1*6000;
 var speedLimit = 15; //user
 var maxSpeed = 40; //gravity-boosted
 
@@ -72,7 +72,7 @@ function setup() {
 	red.fireTime = new Date() - 1000;
 	red.missileReady = true;
 	red.updateShape = true;
-	red.shape = "left wing";
+	red.shape = "full ship";
 	
 	blue.x = fieldWidth-50;
 	blue.y = Math.floor((fieldHeight-100)*Math.random())+50;
@@ -82,7 +82,7 @@ function setup() {
 	blue.fireTime = new Date() - 1000;
 	blue.missileReady = true;
 	blue.updateShape = true;
-	blue.shape = "nose only";
+	blue.shape = "full ship";
 	
 	updateGraphics();
 }
@@ -211,6 +211,9 @@ function fireEngine(team) {
 			teamObj.xv = speedLimit*teamObj.xv/Math.sqrt(speed2);
 			teamObj.yv = speedLimit*teamObj.yv/Math.sqrt(speed2);
 		}
+	} else {
+		teamObj.xv = Math.sqrt(speed)*nxv/Math.sqrt(speed2);
+		teamObj.yv = Math.sqrt(speed)*nyv/Math.sqrt(speed2);
 	}
 }
 
