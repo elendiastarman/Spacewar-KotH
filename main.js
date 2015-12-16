@@ -356,6 +356,8 @@ function checkMissileCollision(m, obj) {
 			var my2 = m.y + (i+1)/num*m.yv;
 			var L1 = [[mx1,my1],[mx2,my2]];
 			
+			var closestIntersection = [];
+			
 			for (var j=0; j<len; j++) {
 				var j2 = (j+1)%len;
 				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
@@ -366,14 +368,84 @@ function checkMissileCollision(m, obj) {
 				var intersection = lineIntersection(L1, L2);
 				
 				if (intersection.length) {
-					m.live = false;
-					ship.alive = false;
-					if (obj.shape === "full ship") {
-					} else if (obj.shape === "left wing") {
-					} else if (obj.shape === "right wing") {
-					} else if (obj.shape === "nose only") {
+					if (!closestIntersection.length || (intersection[1][0] < closestIntersection[0])) {
+						closestIntersection = intersection[1];
+						closestIntersection.push(j);
+						console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
 					}
 				}
+			}
+			
+			if (closestIntersection.length) {
+				console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
+				console.log("");
+				m.live = false;
+				// ship.alive = false;
+				if (ship.shape === "full ship") {
+					switch(closestIntersection[2]) {
+						case 0:
+							if (closestIntersection[1] > 0.5) { //hit on the nose
+								ship.alive = false;
+							} else {
+								ship.shape = "right wing";
+							}
+							break;
+						case 1:
+							if (closestIntersection[1] < 0.5) { //hit on the nose
+								ship.alive = false;
+							} else {
+								ship.shape = "left wing";
+							}
+							break;
+						case 2:
+							if (closestIntersection[1] < 0.5) { //hit on the right side
+								ship.shape = "left wing";
+							} else {
+								ship.shape = "right wing";
+							}
+							break;
+					}
+				} else if (ship.shape === "left wing") {
+					switch(closestIntersection[2]) {
+						case 0:
+							if (closestIntersection[1] > 0.5) { //hit on the nose
+								ship.alive = false;
+							} else {
+								ship.shape = "nose only";
+							}
+							break;
+						case 1:
+						case 2:
+							ship.alive = false;
+							break;
+						case 3:
+						case 4:
+							ship.shape = "nose only";
+							break;
+					}
+				} else if (ship.shape === "right wing") {
+					switch(closestIntersection[2]) {
+						case 1:
+							if (closestIntersection[1] < 0.5) { //hit on the nose
+								ship.alive = false;
+							} else {
+								ship.shape = "nose only";
+							}
+							break;
+						case 0:
+						case 4:
+							ship.alive = false;
+							break;
+						case 2:
+						case 3:
+							ship.shape = "nose only";
+							break;
+					}
+				} else if (ship.shape === "nose only") {
+					ship.alive = false;
+				}
+				
+				return;
 			}
 		}
 	}
