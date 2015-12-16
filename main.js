@@ -248,7 +248,7 @@ function checkShipCollision(ship, obj) {
 	var sPoints = shipShapes[ship.shape];
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
-	var num = Math.ceil(speed/5);
+	var num = Math.ceil(speed/10);
 	
 	if (obj === "sun") {
 		obj = sun;
@@ -261,15 +261,15 @@ function checkShipCollision(ship, obj) {
 		
 		var tPoints = sun.points;
 		
-		for (var i=0; i<num; i++) {
+		for (var i=0; i<=num; i++) {
 			var f = i/num;
 			
 			for (var j=0; j<sPoints.length; j++) {
 				var j2 = (j+1)%sPoints.length;
-				var sx1 = sPoints[j][0]*Math.cos(ship.rot) + ship.x + f*ship.xv;
-				var sy1 = sPoints[j][1]*Math.sin(ship.rot) + ship.y + f*ship.yv;
-				var sx2 = sPoints[j2][0]*Math.cos(ship.rot) + ship.x + f*ship.xv;
-				var sy2 = sPoints[j2][1]*Math.sin(ship.rot) + ship.y + f*ship.yv;
+				var sx1 = sPoints[j][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
+				var sy1 = sPoints[j][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
+				var sx2 = sPoints[j2][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
+				var sy2 = sPoints[j2][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
 				var L1 = [[sx1,sy1],[sx2,sy2]];
 				
 				for (var k=0; k<tPoints.length; k++) {
