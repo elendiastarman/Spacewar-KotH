@@ -15,6 +15,7 @@ var renderLoop;
 			teams.forEach(function(ship){
 				field.selectAll('.intP'+ship.color).data([]).exit().remove();
 				field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
+				field.selectAll('.missileHit'+ship.color).data([]).exit().remove();
 			});
 		});
 	});
@@ -106,10 +107,13 @@ function setup() {
 	blue.turnRate = 5;
 	blue.alive = true;
 	
-	teams.forEach(function(ship){
-		field.selectAll('.intP'+ship.color).data([]).exit().remove();
-		field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
-	});
+	if (showIntersections) {
+		teams.forEach(function(ship){
+			field.selectAll('.intP'+ship.color).data([]).exit().remove();
+			field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
+			field.selectAll('.missileHit'+ship.color).data([]).exit().remove();
+		});
+	}
 	updateGraphics();
 }
 
@@ -383,7 +387,6 @@ function checkMissileCollision(m, obj) {
 		}
 	} else if (obj === "red" || obj === "blue") {
 		var ship = window[obj];
-		if (!ship.alive) { return; }
 		
 		var sPoints = getShipCoords(ship);
 		var len = sPoints.length;
@@ -409,19 +412,31 @@ function checkMissileCollision(m, obj) {
 				var intersection = lineIntersection(L1, L2);
 				
 				if (intersection.length) {
-					if (!closestIntersection.length || (intersection[1][0] < closestIntersection[0])) {
-						closestIntersection = intersection[1];
+					if (!closestIntersection.length || (intersection[1][0] < closestIntersection[1][0])) {
+						closestIntersection = intersection;
 						closestIntersection.push(j);
-						console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
+						// console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
 					}
 				}
 			}
 			
 			if (closestIntersection.length) {
-				console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
+				// console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
 				console.log("");
 				m.live = false;
-				// ship.alive = false;
+				if (!ship.alive){return;}
+				
+				ship.xv *= f;
+				ship.yv *= f;
+				
+				field.selectAll('.missileHit'+ship.color).data([closestIntersection])
+				  .enter().append("circle")
+					.attr("cx",function(d){console.log(d);return d[0][0];})
+					.attr("cy",function(d){return d[0][1];})
+					.attr("r",2)
+					.style("fill","cyan")
+					.attr("class",'missileHit'+ship.color);
+				
 				if (ship.shape === "full ship") {
 					switch(closestIntersection[2]) {
 						case 0:
