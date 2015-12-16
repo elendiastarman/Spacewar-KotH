@@ -4,6 +4,7 @@ var renderLoop;
 (function($){
 	$(document).ready(function (){
 		console.log("main.js");
+		init();
 		setup();
 		renderLoop = setInterval(update, 30);
 		$(document).keydown(handleInput);
@@ -27,20 +28,24 @@ var field;
 var fieldWidth = 800;
 var fieldHeight = 600;
 
+window["sun"] = {"cx":fieldWidth/2, "cy":fieldHeight/2, "r":5, "points":[]}
+for (var i=0; i<8; i++) {
+	var px = sun.cx+sun.r*Math.cos(i*Math.PI/4);
+	var py = sun.cy+sun.r*Math.sin(i*Math.PI/4);
+	sun.points.push([px,py]);
+}
+
 var missileTimeout = 2250;
 var fireRateLimit = 100;
 var gravityStrength = 1*6000;
-var speedLimit = 15; //user
+var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
+var engineThrust = 0.35;
 
-Math.radians = function(degrees) {
-	return degrees * Math.PI / 180;
-};
-Math.degrees = function(radians) {
-	return radians * 180 / Math.PI;
-};
+Math.radians = function(degrees) { return degrees * Math.PI / 180; };
+Math.degrees = function(radians) { return radians * 180 / Math.PI; };
 
-function setup() {
+function init() {
 	var svg = d3.select('#playfield').append("svg")
 		.attr("width",fieldWidth)
 		.attr("height",fieldHeight)
@@ -52,18 +57,19 @@ function setup() {
 		.attr("fill","black");
 	
 	svg.append("circle") //sun
-		.attr("cx",fieldWidth/2)
-		.attr("cy",fieldHeight/2)
-		.attr("r", 5*SCALE)
+		.attr("cx",sun.cx)
+		.attr("cy",sun.cy)
+		.attr("r", sun.r*SCALE)
 		.style("fill","white")
 		.attr("id","sun");
 	
 	d3.select('svg').selectAll(".ship").data(teams).enter().append("polygon")
-		// .attr("points",-8*SCALE+","+16*SCALE+" 0,"+-8*SCALE+" "+8*SCALE+","+16*SCALE)
 		.attr("id", function(d){console.log(d.color); return d.color;})
 		.attr("fill", function(d){return d.color;})
 		.attr("class", "ship");
-	
+}
+
+function setup() {
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	red.rot = 90;
@@ -73,6 +79,9 @@ function setup() {
 	red.missileReady = true;
 	red.updateShape = true;
 	red.shape = "full ship";
+	red.thrust = engineThrust;
+	red.turnRate = 5;
+	red.alive = true;
 	
 	blue.x = fieldWidth-50;
 	blue.y = Math.floor((fieldHeight-100)*Math.random())+50;
@@ -83,7 +92,35 @@ function setup() {
 	blue.missileReady = true;
 	blue.updateShape = true;
 	blue.shape = "full ship";
+	blue.thrust = engineThrust;
+	blue.turnRate = 5;
+	blue.alive = true;
 	
+	updateGraphics();
+}
+
+function update() {
+	checkKeys();
+	
+	if (missiles.length){
+		var filteredMissiles = [];
+		for (var i=0; i<missiles.length; i++) {
+			var m = missiles[i];
+			if (new Date() - m.time > missileTimeout){ m.live = false; }
+				
+			if (m.live) {
+				filteredMissiles.push(m);
+			}
+		}
+		missiles = filteredMissiles;
+		
+		var dots = d3.select("#field").selectAll('.missile').data(missiles);
+		dots.attr("cx", function(d){ return d.x; })
+			.attr("cy", function(d){ return d.y; });
+		dots.exit().remove();
+	}
+	
+	updatePositions();
 	updateGraphics();
 }
 
@@ -131,6 +168,17 @@ function updatePositions(){
 			m.xv = 1.414*maxSpeed*m.xv/Math.sqrt(speed);
 			m.yv = 1.414*maxSpeed*m.yv/Math.sqrt(speed);
 		}
+		
+		m.nx = m.x + m.xv;
+		m.ny = m.y + m.yv;
+		checkMissileCollision(m, "sun");
+		//checkMissileCollision(m, "red");
+		//checkMissileCollision(m, "blue");
+		
+		if (m.live) {
+			m.x = (m.nx+fieldWidth)%fieldWidth;
+			m.y = (m.ny+fieldHeight)%fieldHeight;
+		}
 	});
 }
 
@@ -148,41 +196,6 @@ function updateGraphics(team){
 	});
 }
 
-function update() {
-	checkKeys();
-	
-	if (missiles.length){
-		var filteredMissiles = [];
-		for (var i=0; i<missiles.length; i++) {
-			var m = missiles[i];
-			if (new Date() - m.time < missileTimeout){
-				m.nx = m.x + m.xv;
-				m.ny = m.y + m.yv;
-				checkMissileCollision(m, "sun");
-				//checkMissileCollision(m, "red");
-				//checkMissileCollision(m, "blue");
-				
-				if (m.live) {
-					m.x += m.xv;
-					m.x = (m.x+fieldWidth)%fieldWidth;
-					m.y += m.yv;
-					m.y = (m.y+fieldHeight)%fieldHeight;
-					filteredMissiles.push(m);
-				}
-			}
-		}
-		missiles = filteredMissiles;
-		
-		var dots = d3.select("#field").selectAll('.missile').data(missiles);
-		dots.attr("cx", function(d){ return d.x; })
-			.attr("cy", function(d){ return d.y; });
-		dots.exit().remove();
-	}
-	
-	updatePositions();
-	updateGraphics();
-}
-
 function teamMove(team,action) {
 	var teamObj = window[team];
 	switch (action){
@@ -193,10 +206,10 @@ function teamMove(team,action) {
 			fireMissile(team);
 			break;
 		case "turn right":
-			teamObj.rot = teamObj.rot + 5;
+			teamObj.rot = teamObj.rot + teamObj.turnRate;
 			break;
 		case "turn left":
-			teamObj.rot = teamObj.rot - 5;
+			teamObj.rot = teamObj.rot - teamObj.turnRate;
 			break;
 		case "hyperspace":
 			break;
@@ -207,8 +220,8 @@ function fireEngine(team) {
 	var teamObj = window[team];
 	var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
 	
-	var nxv = teamObj.xv + 0.35*Math.cos(Math.radians(teamObj.rot-90));
-	var nyv = teamObj.yv + 0.35*Math.sin(Math.radians(teamObj.rot-90));
+	var nxv = teamObj.xv + teamObj.thrust*Math.cos(Math.radians(teamObj.rot-90));
+	var nyv = teamObj.yv + teamObj.thrust*Math.sin(Math.radians(teamObj.rot-90));
 	var speed2 = nxv*nxv + nyv*nyv;
 	
 	if (speed < speedLimit*speedLimit || speed2 < speed) { //either slow enough or slowing down
@@ -222,6 +235,12 @@ function fireEngine(team) {
 	} else {
 		teamObj.xv = Math.sqrt(speed)*nxv/Math.sqrt(speed2);
 		teamObj.yv = Math.sqrt(speed)*nyv/Math.sqrt(speed2);
+	}
+}
+
+function checkShipCollision(ship, obj) {
+	if (obj === "sun") {
+		
 	}
 }
 
@@ -265,15 +284,7 @@ function fireMissile(team) {
 
 function checkMissileCollision(m, obj) {
 	if (obj === "sun") {
-		var points = [];
-		var cx = parseInt(d3.select("#sun").attr("cx"));
-		var cy = parseInt(d3.select("#sun").attr("cy"));
-		var r = parseInt(d3.select("#sun").attr("r"));
-		for (var i=0; i<8; i++) {
-			var px = cx+r*Math.cos(i*Math.PI/4);
-			var py = cy+r*Math.sin(i*Math.PI/4);
-			points.push([px,py]);
-		}
+		var points = sun.points;
 	}
 	
 	var L1 = [[m.x,m.y],[m.nx,m.ny]];
@@ -286,16 +297,12 @@ function checkMissileCollision(m, obj) {
 		var intersection = lineIntersection(L1, L2);
 		
 		if (intersection.length) {
+			m.live = false;
 			if (obj === "red") {
 			} else if (obj === "blue") {
-			} else if (obj === "sun") {
-				console.log("???");
-				m.live = false;
-				return 1;
 			}
 		}
 	}
-	return 0;
 }
 
 function lineIntersection(L1, L2) {
