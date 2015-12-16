@@ -251,6 +251,13 @@ function checkShipCollision(ship, obj) {
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
 	var num = Math.ceil(speed/1);
 	
+	// d3.select('#field').selectAll('.dot').data(sPoints).enter().append('circle')
+		// .attr('cx',function(d){return (d[0]*Math.cos(Math.radians(ship.rot))-d[1]*Math.sin(Math.radians(ship.rot))) + ship.x;})
+		// .attr('cy',function(d){return (d[1]*Math.sin(Math.radians(ship.rot))+d[0]*Math.cos(Math.radians(ship.rot))) + ship.y;})
+		// .attr('r',2)
+		// .style('fill','cyan')
+		// .attr('class', 'dot');
+	
 	if (obj === "sun") {
 		obj = sun;
 		var dx = obj.cx - ship.x;
@@ -272,9 +279,9 @@ function checkShipCollision(ship, obj) {
 				// var sx2 = sPoints[j2][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
 				// var sy2 = sPoints[j2][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
 				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy1 = (sPoints[j][1]*Math.sin(Math.radians(ship.rot))+sPoints[j][0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
 				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy2 = (sPoints[j2][1]*Math.sin(Math.radians(ship.rot))+sPoints[j2][0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
 				var L1 = [[sx1,sy1],[sx2,sy2]];
 				
 				for (var k=0; k<tPoints.length; k++) {
@@ -310,7 +317,7 @@ function checkShipCollision(ship, obj) {
 							.style('fill','green');
 						d3.select('#field').selectAll('.dot').data(sPoints).enter().append('circle')
 							.attr('cx',function(d){return (d[0]*Math.cos(Math.radians(ship.rot))-d[1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;})
-							.attr('cy',function(d){return (d[1]*Math.sin(Math.radians(ship.rot))+d[0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;})
+							.attr('cy',function(d){return (d[0]*Math.sin(Math.radians(ship.rot))+d[1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;})
 							.attr('r',2)
 							.style('fill','yellow');
 						// console.log(ship.color+" just died!");
