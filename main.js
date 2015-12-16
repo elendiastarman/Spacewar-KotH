@@ -9,6 +9,7 @@ var renderLoop;
 		renderLoop = setInterval(update, 30);
 		$(document).keydown(handleInput);
 		$(document).keyup(handleInput);
+		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*6000; });
 	});
 })(jQuery);
 
@@ -38,7 +39,7 @@ for (var i=0; i<8; i++) {
 var missileTimeout = 2250;
 var fireRateLimit = 100;
 var gravityStrength = 1*6000;
-var speedLimit = 15; //engine propulsion
+var speedLimit = 200;//15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.35;
 
