@@ -307,7 +307,6 @@ function checkShipSunCollision(ship) {
 						var shiftedPoints = [];
 						sPoints.forEach(function(C){ shiftedPoints.push([C[0]+f*ship.xv,C[1]+f*ship.yv]); });
 						
-						console.log(intersection[0][0]+","+intersection[0][1]);
 						var intPoint = field.selectAll('.intP'+ship.color).data([intersection[0]]);
 						intPoint.enter().append("circle")
 							.attr("r",3)
