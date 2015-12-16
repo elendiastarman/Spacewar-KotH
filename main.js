@@ -40,7 +40,7 @@ var missileTimeout = 2250;
 var fireRateLimit = 100;
 var gravityStrength = 1*6000;
 var speedLimit = 200;//15; //engine propulsion
-var maxSpeed = 40; //gravity-boosted
+var maxSpeed = 400; //gravity-boosted
 var engineThrust = 0.35;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
