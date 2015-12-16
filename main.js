@@ -128,27 +128,31 @@ function updatePositions(){
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(teamObj){
-		var dx = teamObj.x - sun.attr('cx');
-		var dy = teamObj.y - sun.attr('cy');
-		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dx*dx+dy*dy > 10){
-			var force = gravityStrength / (dx*dx+dy*dy);
-		} else {
-			var force = gravityStrength;
-		}
-		teamObj.xv += -force*dx/dis;
-		teamObj.yv += -force*dy/dis;
+		if (teamObj.alive) {
+			var dx = teamObj.x - sun.attr('cx');
+			var dy = teamObj.y - sun.attr('cy');
+			var dis = Math.sqrt(dx*dx+dy*dy);
+			if (dx*dx+dy*dy > 10){
+				var force = gravityStrength / (dx*dx+dy*dy);
+			} else {
+				var force = gravityStrength;
+			}
+			teamObj.xv += -force*dx/dis;
+			teamObj.yv += -force*dy/dis;
+			
+			var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+			if (speed > maxSpeed*maxSpeed) {
+				teamObj.xv = maxSpeed*teamObj.xv/Math.sqrt(speed);
+				teamObj.yv = maxSpeed*teamObj.yv/Math.sqrt(speed);
+			}
 		
-		var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
-		if (speed > maxSpeed*maxSpeed) {
-			teamObj.xv = maxSpeed*teamObj.xv/Math.sqrt(speed);
-			teamObj.yv = maxSpeed*teamObj.yv/Math.sqrt(speed);
+			checkShipCollision(teamObj, "sun");
+			
+			teamObj.x += teamObj.xv;
+			teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
+			teamObj.y += teamObj.yv;
+			teamObj.y = (teamObj.y+fieldHeight)%fieldHeight;
 		}
-		
-		teamObj.x += teamObj.xv;
-		teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
-		teamObj.y += teamObj.yv;
-		teamObj.y = (teamObj.y+fieldHeight)%fieldHeight;
 	});
 	
 	missiles.forEach(function(m){
@@ -239,8 +243,52 @@ function fireEngine(team) {
 }
 
 function checkShipCollision(ship, obj) {
+	var sPoints = shipShapes[ship.shape];
+	var tPoints;
+	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
+	var num = Math.ceil(speed/5);
+	
 	if (obj === "sun") {
+		obj = sun;
+		var dx = obj.cx - ship.x;
+		var dy = obj.cy - ship.y;
+		var dis = Math.sqrt(dx*dx+dy*dy);
+		if (dis > 40) { return; } //pointless to check for a collision if they're far apart
 		
+		console.log("Continuing...");
+		
+		var tPoints = sun.points;
+		
+		for (var i=0; i<num; i++) {
+			var f = i/num;
+			
+			for (var j=0; j<sPoints.length; j++) {
+				var j2 = (j+1)%sPoints.length;
+				var sx1 = sPoints[j][0]*Math.cos(ship.rot) + ship.x + f*ship.xv;
+				var sy1 = sPoints[j][1]*Math.sin(ship.rot) + ship.y + f*ship.yv;
+				var sx2 = sPoints[j2][0]*Math.cos(ship.rot) + ship.x + f*ship.xv;
+				var sy2 = sPoints[j2][1]*Math.sin(ship.rot) + ship.y + f*ship.yv;
+				var L1 = [[sx1,sy1],[sx2,sy2]];
+				
+				for (var k=0; k<tPoints.length; k++) {
+					var k2 = (k+1)%tPoints.length;
+					var tx1 = tPoints[k][0];
+					var ty1 = tPoints[k][1];
+					var tx2 = tPoints[k2][0];
+					var ty2 = tPoints[k2][1];
+					var L2 = [[tx1,ty1],[tx2,ty2]];
+					
+					var intersection = lineIntersection(L1,L2);
+					if (intersection.length) {
+						console.log(ship.color+" just died!");
+						ship.xv *= f;
+						ship.yv *= f;
+						ship.alive = false;
+						return;
+					}
+				}
+			}
+		}
 	}
 }
 
