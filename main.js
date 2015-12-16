@@ -106,6 +106,10 @@ function setup() {
 	blue.turnRate = 5;
 	blue.alive = true;
 	
+	teams.forEach(function(ship){
+		field.selectAll('.intP'+ship.color).data([]).exit().remove();
+		field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
+	});
 	updateGraphics();
 }
 
@@ -319,6 +323,7 @@ function checkShipSunCollision(ship) {
 							.attr("class","shipVerts"+ship.color);
 						shipVerts.attr("cx",function(d){return d[0]})
 							.attr("cy",function(d){return d[1]});
+						shipVerts.exit().remove();
 					}
 					ship.xv *= f;
 					ship.yv *= f;
@@ -518,14 +523,17 @@ function lineIntersection(L1, L2) {
 
 var keystates = {};
 function handleInput(event) {
-	if (event.which == 27){
+	// console.log(event.which);
+	if (event.which == 27){ //ESC key, stops animation
 		clearInterval(renderLoop);
 		renderLoop = false;
 		return;
-	} else if (event.which == 13){
+	} else if (event.which == 13){ //ENTER key, resumes animation
 		event.preventDefault();
 		if (!renderLoop){ renderLoop = setInterval(update, 30); }
 		return;
+	} else if (event.which == 83 && event.type == 'keyup'){ //S key, resets field
+		setup();
 	}
 	
 	if (event.which == 191){ event.preventDefault(); };
