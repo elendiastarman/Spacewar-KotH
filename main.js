@@ -133,10 +133,10 @@ function updatePositions(){
 			var dx = teamObj.x - sun.attr('cx');
 			var dy = teamObj.y - sun.attr('cy');
 			var dis = Math.sqrt(dx*dx+dy*dy);
-			if (dx*dx+dy*dy > 10){
+			if (dx*dx+dy*dy > 5){
 				var force = gravityStrength / (dx*dx+dy*dy);
 			} else {
-				var force = gravityStrength;
+				var force = gravityStrength/5;
 			}
 			teamObj.xv += -force*dx/dis;
 			teamObj.yv += -force*dy/dis;
@@ -160,10 +160,10 @@ function updatePositions(){
 		var dx = m.x - sun.attr('cx');
 		var dy = m.y - sun.attr('cy');
 		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dx*dx+dy*dy > 100){
+		if (dx*dx+dy*dy > 5){
 			var force = gravityStrength / (dx*dx+dy*dy);
 		} else {
-			var force = gravityStrength/100;
+			var force = gravityStrength/5;
 		}
 		m.xv += -force*dx/dis;
 		m.yv += -force*dy/dis;
@@ -177,8 +177,8 @@ function updatePositions(){
 		m.nx = m.x + m.xv;
 		m.ny = m.y + m.yv;
 		checkMissileCollision(m, "sun");
-		//checkMissileCollision(m, "red");
-		//checkMissileCollision(m, "blue");
+		checkMissileCollision(m, "red");
+		checkMissileCollision(m, "blue");
 		
 		if (m.live) {
 			m.x = (m.nx+fieldWidth)%fieldWidth;
@@ -333,21 +333,47 @@ function fireMissile(team) {
 function checkMissileCollision(m, obj) {
 	if (obj === "sun") {
 		var points = sun.points;
-	}
-	
-	var L1 = [[m.x,m.y],[m.nx,m.ny]];
-	var len = points.length;
-	
-	//if (Math.abs(m.nx - cx) <= 5 && Math.abs(m.ny - cy) <= 5) { debugger; }
-	
-	for (var i=0; i<len; i++) {
-		var L2 = [[points[i][0],points[i][1]], [points[(i+1)%len][0],points[(i+1)%len][1]]];
-		var intersection = lineIntersection(L1, L2);
+		var L1 = [[m.x,m.y],[m.nx,m.ny]];
+		var len = points.length;
 		
-		if (intersection.length) {
-			m.live = false;
-			if (obj === "red") {
-			} else if (obj === "blue") {
+		for (var i=0; i<len; i++) {
+			var L2 = [[points[i][0],points[i][1]], [points[(i+1)%len][0],points[(i+1)%len][1]]];
+			var intersection = lineIntersection(L1, L2);
+			
+			if (intersection.length) { m.live = false; }
+		}
+	} else if (obj === "red" || obj === "blue") {
+		var ship = window[obj];
+		var sPoints = shipShapes[ship.shape];
+		var len = sPoints.length;
+		var num = Math.ceil(1+Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv));
+		
+		for (var i=0; i<num; i++) {
+			var f = i/num;
+			var mx1 = m.x + f*m.xv;
+			var my1 = m.y + f*m.yv;
+			var mx2 = m.x + (i+1)/num*m.xv;
+			var my2 = m.y + (i+1)/num*m.yv;
+			var L1 = [[mx1,my1],[mx2,my2]];
+			
+			for (var j=0; j<len; j++) {
+				var j2 = (j+1)%len;
+				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+				var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+				var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var L2 = [[sx1,sy1],[sx2,sy2]];
+				var intersection = lineIntersection(L1, L2);
+				
+				if (intersection.length) {
+					m.live = false;
+					ship.alive = false;
+					if (obj.shape === "full ship") {
+					} else if (obj.shape === "left wing") {
+					} else if (obj.shape === "right wing") {
+					} else if (obj.shape === "nose only") {
+					}
+				}
 			}
 		}
 	}
