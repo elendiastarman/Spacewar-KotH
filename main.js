@@ -202,21 +202,23 @@ function updateGraphics(team){
 
 function teamMove(team,action) {
 	var teamObj = window[team];
-	switch (action){
-		case "thrust":
-			fireEngine(team);
-			break;
-		case "fire":
-			fireMissile(team);
-			break;
-		case "turn right":
-			teamObj.rot = teamObj.rot + teamObj.turnRate;
-			break;
-		case "turn left":
-			teamObj.rot = teamObj.rot - teamObj.turnRate;
-			break;
-		case "hyperspace":
-			break;
+	if (teamObj.alive) {
+		switch (action){
+			case "thrust":
+				fireEngine(team);
+				break;
+			case "fire":
+				fireMissile(team);
+				break;
+			case "turn right":
+				teamObj.rot = teamObj.rot + teamObj.turnRate;
+				break;
+			case "turn left":
+				teamObj.rot = teamObj.rot - teamObj.turnRate;
+				break;
+			case "hyperspace":
+				break;
+		}
 	}
 }
 
@@ -255,7 +257,7 @@ function checkShipCollision(ship, obj) {
 		var dis = Math.sqrt(dx*dx+dy*dy);
 		if (dis > 40) { return; } //pointless to check for a collision if they're far apart
 		
-		console.log("Continuing...");
+		// console.log("Continuing...");
 		
 		var tPoints = sun.points;
 		
@@ -280,7 +282,7 @@ function checkShipCollision(ship, obj) {
 					
 					var intersection = lineIntersection(L1,L2);
 					if (intersection.length) {
-						console.log(ship.color+" just died!");
+						// console.log(ship.color+" just died!");
 						ship.xv *= f;
 						ship.yv *= f;
 						ship.alive = false;
