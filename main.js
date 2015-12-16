@@ -10,6 +10,13 @@ var renderLoop;
 		$(document).keydown(handleInput);
 		$(document).keyup(handleInput);
 		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*6000; });
+		$('#showIntersections').on('change', function(){
+			showIntersections = !showIntersections;
+			teams.forEach(function(ship){
+				field.selectAll('.intP'+ship.color).data([]).exit().remove();
+				field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
+			});
+		});
 	});
 })(jQuery);
 
@@ -42,6 +49,8 @@ var gravityStrength = 1*6000;
 var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.35;
+
+var showIntersections = true;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
 Math.degrees = function(radians) { return radians * 180 / Math.PI; };
@@ -256,7 +265,7 @@ function fireEngine(team) {
 }
 
 function checkShipSunCollision(ship) {
-	var sPoints = shipShapes[ship.shape];
+	var sPoints = getShipCoords(ship);
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
 	var num = Math.ceil(speed);
@@ -273,10 +282,10 @@ function checkShipSunCollision(ship) {
 		
 		for (var j=0; j<sPoints.length; j++) {
 			var j2 = (j+1)%sPoints.length;
-			var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-			var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
-			var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-			var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+			var sx1 = sPoints[j][0] + f*ship.xv;
+			var sy1 = sPoints[j][1] + f*ship.yv;
+			var sx2 = sPoints[j2][0] + f*ship.xv;
+			var sy2 = sPoints[j2][1] + f*ship.yv;
 			var L1 = [[sx1,sy1],[sx2,sy2]];
 			
 			for (var k=0; k<tPoints.length; k++) {
@@ -289,6 +298,28 @@ function checkShipSunCollision(ship) {
 				
 				var intersection = lineIntersection(L1,L2);
 				if (intersection.length) {
+					if (showIntersections) {
+						console.log('Checkbox is checked!');
+						var shiftedPoints = [];
+						sPoints.forEach(function(C){ shiftedPoints.push([C[0]+f*ship.xv,C[1]+f*ship.yv]); });
+						
+						console.log(intersection[0][0]+","+intersection[0][1]);
+						var intPoint = field.selectAll('.intP'+ship.color).data([intersection[0]]);
+						intPoint.enter().append("circle")
+							.attr("r",3)
+							.style("fill","green")
+							.attr("class","intP"+ship.color);
+						intPoint.attr("cx",function(d){return d[0]})
+							.attr("cy",function(d){return d[1]});
+						
+						var shipVerts = field.selectAll('.shipVerts'+ship.color).data(shiftedPoints);
+						shipVerts.enter().append("circle")
+							.attr("r",2)
+							.style("fill","yellow")
+							.attr("class","shipVerts"+ship.color);
+						shipVerts.attr("cx",function(d){return d[0]})
+							.attr("cy",function(d){return d[1]});
+					}
 					ship.xv *= f;
 					ship.yv *= f;
 					ship.alive = false;
@@ -297,6 +328,19 @@ function checkShipSunCollision(ship) {
 			}
 		}
 	}
+}
+
+function getShipCoords(ship) {
+	var sPoints = shipShapes[ship.shape];
+	var tPoints = [];
+	
+	for (var i=0; i<sPoints.length; i++) {
+		var x = (sPoints[i][0]*Math.cos(Math.radians(ship.rot))-sPoints[i][1]*Math.sin(Math.radians(ship.rot))) + ship.x;
+		var y = (sPoints[i][0]*Math.sin(Math.radians(ship.rot))+sPoints[i][1]*Math.cos(Math.radians(ship.rot))) + ship.y;
+		tPoints.push([x,y]);
+	}
+	
+	return tPoints;
 }
 
 var missiles = [];
@@ -337,7 +381,7 @@ function checkMissileCollision(m, obj) {
 		var ship = window[obj];
 		if (!ship.alive) { return; }
 		
-		var sPoints = shipShapes[ship.shape];
+		var sPoints = getShipCoords(ship);
 		var len = sPoints.length;
 		var num = Math.ceil(1+Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv));
 		
@@ -353,10 +397,10 @@ function checkMissileCollision(m, obj) {
 			
 			for (var j=0; j<len; j++) {
 				var j2 = (j+1)%len;
-				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
-				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var sx1 = sPoints[j][0] + f*ship.xv;
+				var sy1 = sPoints[j][1] + f*ship.yv;
+				var sx2 = sPoints[j2][0] + f*ship.xv;
+				var sy2 = sPoints[j2][1] + f*ship.yv;
 				var L2 = [[sx1,sy1],[sx2,sy2]];
 				var intersection = lineIntersection(L1, L2);
 				
