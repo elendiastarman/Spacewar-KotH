@@ -256,7 +256,7 @@ function checkShipCollision(ship, obj) {
 		var dx = obj.cx - ship.x;
 		var dy = obj.cy - ship.y;
 		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dis > 40) { return; } //pointless to check for a collision if they're far apart
+		if (dis > fieldWidth) { return; } //pointless to check for a collision if they're far apart
 		
 		// console.log("Continuing...");
 		
@@ -267,10 +267,14 @@ function checkShipCollision(ship, obj) {
 			
 			for (var j=0; j<sPoints.length; j++) {
 				var j2 = (j+1)%sPoints.length;
-				var sx1 = sPoints[j][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
-				var sy1 = sPoints[j][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
-				var sx2 = sPoints[j2][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
-				var sy2 = sPoints[j2][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
+				// var sx1 = sPoints[j][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
+				// var sy1 = sPoints[j][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
+				// var sx2 = sPoints[j2][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
+				// var sy2 = sPoints[j2][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
+				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+				var sy1 = (sPoints[j][1]*Math.sin(Math.radians(ship.rot))+sPoints[j][0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+				var sy2 = (sPoints[j2][1]*Math.sin(Math.radians(ship.rot))+sPoints[j2][0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
 				var L1 = [[sx1,sy1],[sx2,sy2]];
 				
 				for (var k=0; k<tPoints.length; k++) {
@@ -283,9 +287,39 @@ function checkShipCollision(ship, obj) {
 					
 					var intersection = lineIntersection(L1,L2);
 					if (intersection.length) {
+						console.log("L1:");
+						console.log(L1[0][0]);
+						console.log(L1[0][1]);
+						console.log(L1[1][0]);
+						console.log(L1[1][1]);
+						console.log("L2:");
+						console.log(L2[0][0]);
+						console.log(L2[0][1]);
+						console.log(L2[1][0]);
+						console.log(L2[1][1]);
+						console.log("intersection:");
+						console.log("x: "+intersection[0][0]);
+						console.log("y: "+intersection[0][1]);
+						console.log("t: "+intersection[1][0]);
+						console.log("u: "+intersection[1][1]);
+						
+						d3.select('#field').append('circle')
+							.attr('cx',intersection[0][0])
+							.attr('cy',intersection[0][1])
+							.attr('r',3)
+							.style('fill','green');
+						d3.select('#field').selectAll('.dot').data(sPoints).enter().append('circle')
+							.attr('cx',function(d){return (d[0]*Math.cos(Math.radians(ship.rot))-d[1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;})
+							.attr('cy',function(d){return (d[1]*Math.sin(Math.radians(ship.rot))+d[0]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;})
+							.attr('r',2)
+							.style('fill','yellow');
 						// console.log(ship.color+" just died!");
-						ship.xv *= f;
-						ship.yv *= f;
+						// ship.xv *= f;
+						// ship.yv *= f;
+						ship.x += f*ship.xv;
+						ship.y += f*ship.yv;
+						ship.xv = 0;
+						ship.yv = 0;
 						ship.alive = false;
 						return;
 					}
