@@ -128,31 +128,41 @@ function update() {
 function updatePositions(){
 	var sun = d3.select('#sun');
 	
-	teams.forEach(function(teamObj){
-		if (teamObj.alive) {
-			var dx = teamObj.x - sun.attr('cx');
-			var dy = teamObj.y - sun.attr('cy');
+	teams.forEach(function(ship){
+		if (ship.alive) {
+			var dx = ship.x - sun.attr('cx');
+			var dy = ship.y - sun.attr('cy');
 			var dis = Math.sqrt(dx*dx+dy*dy);
 			if (dx*dx+dy*dy > 5){
 				var force = gravityStrength / (dx*dx+dy*dy);
 			} else {
 				var force = gravityStrength/5;
 			}
-			teamObj.xv += -force*dx/dis;
-			teamObj.yv += -force*dy/dis;
+			ship.xv += -force*dx/dis;
+			ship.yv += -force*dy/dis;
 			
-			var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+			var speed = ship.xv*ship.xv + ship.yv*ship.yv;
 			if (speed > maxSpeed*maxSpeed) {
-				teamObj.xv = maxSpeed*teamObj.xv/Math.sqrt(speed);
-				teamObj.yv = maxSpeed*teamObj.yv/Math.sqrt(speed);
+				ship.xv = maxSpeed*ship.xv/Math.sqrt(speed);
+				ship.yv = maxSpeed*ship.yv/Math.sqrt(speed);
 			}
 		
-			checkShipCollision(teamObj, "sun");
+			checkShipSunCollision(ship);
 			
-			teamObj.x += teamObj.xv;
-			teamObj.x = (teamObj.x+fieldWidth)%fieldWidth;
-			teamObj.y += teamObj.yv;
-			teamObj.y = (teamObj.y+fieldHeight)%fieldHeight;
+		}
+	});
+	
+	//checkShipsCollision(teams[0],teams[1]);
+	
+	teams.forEach(function(ship){
+		ship.x += ship.xv;
+		ship.x = (ship.x+fieldWidth)%fieldWidth;
+		ship.y += ship.yv;
+		ship.y = (ship.y+fieldHeight)%fieldHeight;
+		
+		if (!ship.alive) {
+			ship.xv = 0;
+			ship.yv = 0;
 		}
 	});
 	
@@ -245,47 +255,44 @@ function fireEngine(team) {
 	}
 }
 
-function checkShipCollision(ship, obj) {
+function checkShipSunCollision(ship) {
 	var sPoints = shipShapes[ship.shape];
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
 	var num = Math.ceil(speed);
 	
-	if (obj === "sun") {
-		obj = sun;
-		var dx = obj.cx - ship.x;
-		var dy = obj.cy - ship.y;
-		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dis > 40) { return; } //pointless to check for a collision if they're far apart
+	var dx = sun.cx - ship.x;
+	var dy = sun.cy - ship.y;
+	var dis = Math.sqrt(dx*dx+dy*dy);
+	if (dis > 40) { return; } //pointless to check for a collision if they're far apart
+	
+	var tPoints = sun.points;
+	
+	for (var i=0; i<=num; i++) {
+		var f = i/num;
 		
-		var tPoints = sun.points;
-		
-		for (var i=0; i<=num; i++) {
-			var f = i/num;
+		for (var j=0; j<sPoints.length; j++) {
+			var j2 = (j+1)%sPoints.length;
+			var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+			var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+			var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
+			var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
+			var L1 = [[sx1,sy1],[sx2,sy2]];
 			
-			for (var j=0; j<sPoints.length; j++) {
-				var j2 = (j+1)%sPoints.length;
-				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
-				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
-				var sy2 = (sPoints[j2][0]*Math.sin(Math.radians(ship.rot))+sPoints[j2][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
-				var L1 = [[sx1,sy1],[sx2,sy2]];
+			for (var k=0; k<tPoints.length; k++) {
+				var k2 = (k+1)%tPoints.length;
+				var tx1 = tPoints[k][0];
+				var ty1 = tPoints[k][1];
+				var tx2 = tPoints[k2][0];
+				var ty2 = tPoints[k2][1];
+				var L2 = [[tx1,ty1],[tx2,ty2]];
 				
-				for (var k=0; k<tPoints.length; k++) {
-					var k2 = (k+1)%tPoints.length;
-					var tx1 = tPoints[k][0];
-					var ty1 = tPoints[k][1];
-					var tx2 = tPoints[k2][0];
-					var ty2 = tPoints[k2][1];
-					var L2 = [[tx1,ty1],[tx2,ty2]];
-					
-					var intersection = lineIntersection(L1,L2);
-					if (intersection.length) {
-						ship.xv *= f;
-						ship.yv *= f;
-						ship.alive = false;
-						return;
-					}
+				var intersection = lineIntersection(L1,L2);
+				if (intersection.length) {
+					ship.xv *= f;
+					ship.yv *= f;
+					ship.alive = false;
+					return;
 				}
 			}
 		}
@@ -293,21 +300,6 @@ function checkShipCollision(ship, obj) {
 }
 
 var missiles = [];
-/* class Missile {
-	constructor(x,y,xv,yv) {
-		this.x = x;
-		this.y = y;
-		this.xv = xv;
-		this.yv = yv;
-		if (missiles.length > 0){
-			this.id = missiles[missiles.length-1].id + 1;
-		} else {
-			this.id = 1;
-		}
-		this.name = "missile"+this.id;
-	}
-} */
-
 function fireMissile(team) {
 	var mx,my,mxv,myv;
 	var p = window[team];
@@ -316,7 +308,6 @@ function fireMissile(team) {
 	mx = p.x + mxv;
 	my = p.y + myv;
 	
-	// missiles.push(new Missile(mx,my,mxv,myv));
 	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
 	missiles[missiles.length-1]['id'] = missiles.length;
 	
@@ -344,6 +335,8 @@ function checkMissileCollision(m, obj) {
 		}
 	} else if (obj === "red" || obj === "blue") {
 		var ship = window[obj];
+		if (!ship.alive) { return; }
+		
 		var sPoints = shipShapes[ship.shape];
 		var len = sPoints.length;
 		var num = Math.ceil(1+Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv));
