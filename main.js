@@ -13,9 +13,9 @@ var renderLoop;
 		$('#showIntersections').on('change', function(){
 			showIntersections = !showIntersections;
 			teams.forEach(function(ship){
-				field.selectAll('.intP'+ship.color).data([]).exit().remove();
-				field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
-				field.selectAll('.missileHit'+ship.color).data([]).exit().remove();
+				field.selectAll('.intP'+ship.color).remove();
+				field.selectAll('.shipVerts'+ship.color).remove();
+				field.selectAll('.missileHit'+ship.color).remove();
 			});
 		});
 	});
@@ -107,11 +107,13 @@ function setup() {
 	blue.turnRate = 5;
 	blue.alive = true;
 	
+	missiles = [];
+	field.selectAll('.missile').remove();
 	if (showIntersections) {
 		teams.forEach(function(ship){
-			field.selectAll('.intP'+ship.color).data([]).exit().remove();
-			field.selectAll('.shipVerts'+ship.color).data([]).exit().remove();
-			field.selectAll('.missileHit'+ship.color).data([]).exit().remove();
+			field.selectAll('.intP'+ship.color).remove();
+			field.selectAll('.shipVerts'+ship.color).remove();
+			field.selectAll('.missileHit'+ship.color).remove();
 		});
 	}
 	updateGraphics();
