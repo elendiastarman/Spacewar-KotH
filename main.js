@@ -249,7 +249,7 @@ function checkShipCollision(ship, obj) {
 	var sPoints = shipShapes[ship.shape];
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
-	var num = Math.ceil(speed/10);
+	var num = Math.ceil(speed/1);
 	
 	if (obj === "sun") {
 		obj = sun;
