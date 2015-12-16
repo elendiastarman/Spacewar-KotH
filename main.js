@@ -39,8 +39,8 @@ for (var i=0; i<8; i++) {
 var missileTimeout = 2250;
 var fireRateLimit = 100;
 var gravityStrength = 1*6000;
-var speedLimit = 200;//15; //engine propulsion
-var maxSpeed = 400; //gravity-boosted
+var speedLimit = 15; //engine propulsion
+var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.35;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
@@ -249,23 +249,14 @@ function checkShipCollision(ship, obj) {
 	var sPoints = shipShapes[ship.shape];
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
-	var num = Math.ceil(speed/1);
-	
-	// d3.select('#field').selectAll('.dot').data(sPoints).enter().append('circle')
-		// .attr('cx',function(d){return (d[0]*Math.cos(Math.radians(ship.rot))-d[1]*Math.sin(Math.radians(ship.rot))) + ship.x;})
-		// .attr('cy',function(d){return (d[1]*Math.sin(Math.radians(ship.rot))+d[0]*Math.cos(Math.radians(ship.rot))) + ship.y;})
-		// .attr('r',2)
-		// .style('fill','cyan')
-		// .attr('class', 'dot');
+	var num = Math.ceil(speed);
 	
 	if (obj === "sun") {
 		obj = sun;
 		var dx = obj.cx - ship.x;
 		var dy = obj.cy - ship.y;
 		var dis = Math.sqrt(dx*dx+dy*dy);
-		if (dis > fieldWidth) { return; } //pointless to check for a collision if they're far apart
-		
-		// console.log("Continuing...");
+		if (dis > 40) { return; } //pointless to check for a collision if they're far apart
 		
 		var tPoints = sun.points;
 		
@@ -274,10 +265,6 @@ function checkShipCollision(ship, obj) {
 			
 			for (var j=0; j<sPoints.length; j++) {
 				var j2 = (j+1)%sPoints.length;
-				// var sx1 = sPoints[j][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
-				// var sy1 = sPoints[j][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
-				// var sx2 = sPoints[j2][0]*Math.cos(Math.radians(ship.rot)) + ship.x + f*ship.xv;
-				// var sy2 = sPoints[j2][1]*Math.sin(Math.radians(ship.rot)) + ship.y + f*ship.yv;
 				var sx1 = (sPoints[j][0]*Math.cos(Math.radians(ship.rot))-sPoints[j][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
 				var sy1 = (sPoints[j][0]*Math.sin(Math.radians(ship.rot))+sPoints[j][1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;
 				var sx2 = (sPoints[j2][0]*Math.cos(Math.radians(ship.rot))-sPoints[j2][1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;
@@ -294,39 +281,8 @@ function checkShipCollision(ship, obj) {
 					
 					var intersection = lineIntersection(L1,L2);
 					if (intersection.length) {
-						console.log("L1:");
-						console.log(L1[0][0]);
-						console.log(L1[0][1]);
-						console.log(L1[1][0]);
-						console.log(L1[1][1]);
-						console.log("L2:");
-						console.log(L2[0][0]);
-						console.log(L2[0][1]);
-						console.log(L2[1][0]);
-						console.log(L2[1][1]);
-						console.log("intersection:");
-						console.log("x: "+intersection[0][0]);
-						console.log("y: "+intersection[0][1]);
-						console.log("t: "+intersection[1][0]);
-						console.log("u: "+intersection[1][1]);
-						
-						d3.select('#field').append('circle')
-							.attr('cx',intersection[0][0])
-							.attr('cy',intersection[0][1])
-							.attr('r',3)
-							.style('fill','green');
-						d3.select('#field').selectAll('.dot').data(sPoints).enter().append('circle')
-							.attr('cx',function(d){return (d[0]*Math.cos(Math.radians(ship.rot))-d[1]*Math.sin(Math.radians(ship.rot))) + ship.x + f*ship.xv;})
-							.attr('cy',function(d){return (d[0]*Math.sin(Math.radians(ship.rot))+d[1]*Math.cos(Math.radians(ship.rot))) + ship.y + f*ship.yv;})
-							.attr('r',2)
-							.style('fill','yellow');
-						// console.log(ship.color+" just died!");
-						// ship.xv *= f;
-						// ship.yv *= f;
-						ship.x += f*ship.xv;
-						ship.y += f*ship.yv;
-						ship.xv = 0;
-						ship.yv = 0;
+						ship.xv *= f;
+						ship.yv *= f;
 						ship.alive = false;
 						return;
 					}
