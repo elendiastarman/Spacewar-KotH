@@ -313,10 +313,10 @@ var missiles = [];
 function fireMissile(team) {
 	var mx,my,mxv,myv;
 	var p = window[team];
-	mx = p.x;
-	my = p.y;
 	mxv = p.xv + 10*Math.cos(Math.radians(p.rot-90));
 	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
+	mx = p.x + mxv;
+	my = p.y + myv;
 	
 	// missiles.push(new Missile(mx,my,mxv,myv));
 	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
