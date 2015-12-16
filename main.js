@@ -417,24 +417,17 @@ function checkMissileCollision(m, obj) {
 					if (!closestIntersection.length || (intersection[1][0] < closestIntersection[1][0])) {
 						closestIntersection = intersection;
 						closestIntersection.push(j);
-						// console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
 					}
 				}
 			}
 			
 			if (closestIntersection.length) {
-				// console.log(closestIntersection[0]+","+closestIntersection[1]+","+closestIntersection[2]);
-				console.log("");
 				m.live = false;
 				if (!ship.alive){return;}
 				
-				ship.xv *= f;
-				ship.yv *= f;
-				
-				field.selectAll('.missileHit'+ship.color).data([closestIntersection])
-				  .enter().append("circle")
-					.attr("cx",function(d){console.log(d);return d[0][0];})
-					.attr("cy",function(d){return d[0][1];})
+				field.append("circle")
+					.attr("cx",closestIntersection[0][0])
+					.attr("cy",closestIntersection[0][1])
 					.attr("r",2)
 					.style("fill","cyan")
 					.attr("class",'missileHit'+ship.color);
@@ -501,6 +494,11 @@ function checkMissileCollision(m, obj) {
 					}
 				} else if (ship.shape === "nose only") {
 					ship.alive = false;
+				}
+				
+				if (!ship.alive){
+					ship.xv *= f;
+					ship.yv *= f;
 				}
 				
 				return;
