@@ -327,7 +327,7 @@ function updateGraphics(team){
 
 function teamMove(team,action) {
 	var ship = window[team];
-	if (ship.alive) {
+	if (ship.alive && !ship.hyperTime) {
 		switch (action){
 			case "fire engine":
 				fireEngine(team);
