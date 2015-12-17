@@ -47,12 +47,17 @@ for (var i=0; i<8; i++) {
 var missileTimeout = 2250;
 var missileSpeed = 10;
 var fireRateLimit = 100;
+
 var gravityStrength = 1*5000;
+
 var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.30;
 
-var showIntersections = true;
+var hyperDuration = 1000;
+var deathDuration = 1000;
+
+var showIntersections = false;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
 Math.degrees = function(radians) { return radians * 180 / Math.PI; };
@@ -85,28 +90,29 @@ function setup() {
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	red.rot = 90;
-	red.xv = 0.0;
-	red.yv = 0.0;
-	red.fireTime = new Date() - 1000;
-	red.missileReady = true;
-	red.updateShape = true;
-	red.shape = "full ship";
-	red.thrust = engineThrust;
-	red.turnRate = 5;
-	red.alive = true;
+	red.deadColor = "#FF8888";
 	
 	blue.x = fieldWidth-50;
 	blue.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	blue.rot = -90;
-	blue.xv = 0.0;
-	blue.yv = 0.0;
-	blue.fireTime = new Date() - 1000;
-	blue.missileReady = true;
-	blue.updateShape = true;
-	blue.shape = "full ship";
-	blue.thrust = engineThrust;
-	blue.turnRate = 5;
-	blue.alive = true;
+	blue.deadColor = "#8888FF";
+	
+	teams.forEach(function(ship){
+		ship.xv = 0.0;
+		ship.yv = 0.0;
+		ship.fireTime = new Date() - 1000;
+		ship.missileReady = true;
+		ship.updateShape = true;
+		ship.shape = "full ship";
+		ship.thrust = engineThrust;
+		ship.turnRate = 5;
+			
+		ship.deathTime = false;
+		ship.hyperTime = false;
+		ship.alive = true;
+		
+		field.select("#"+ship.color).style("fill",ship.color);
+	});
 	
 	missiles = [];
 	field.selectAll('.missile').remove();
@@ -149,7 +155,7 @@ function updatePositions(){
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(ship){
-		if (ship.alive) {
+		if (ship.alive && !ship.hyperTime) {
 			var dx = ship.x - sun.attr('cx');
 			var dy = ship.y - sun.attr('cy');
 			var dis = Math.sqrt(dx*dx+dy*dy);
@@ -205,12 +211,27 @@ function updatePositions(){
 	});
 	
 	teams.forEach(function(ship){
-		ship.x += ship.xv;
-		ship.x = (ship.x+fieldWidth)%fieldWidth;
-		ship.y += ship.yv;
-		ship.y = (ship.y+fieldHeight)%fieldHeight;
-		
-		if (!ship.alive) {
+		if (!ship.hyperTime) {
+			ship.x += ship.xv;
+			ship.x = (ship.x+fieldWidth)%fieldWidth;
+			ship.y += ship.yv;
+			ship.y = (ship.y+fieldHeight)%fieldHeight;
+			
+			if (!ship.alive) {
+				ship.xv = 0;
+				ship.yv = 0;
+			}
+		} else if (new Date() - ship.hyperTime > hyperDuration) {
+			ship.x = Math.random()*(fieldWidth-100)+50;
+			ship.y = Math.random()*(fieldHeight-100)+50;
+			ship.xv = 0;
+			ship.yv = 0;
+			var deathChance = ship.shape === "full ship" ? 0.25 : 0.5;
+			if (Math.random() < deathChance) { ship.alive = false; }
+			ship.hyperTime = false;
+		} else {
+			ship.x = -200;
+			ship.y = -200;
 			ship.xv = 0;
 			ship.yv = 0;
 		}
@@ -227,9 +248,7 @@ function updateGraphics(team){
 			shipShapes[ship.shape].forEach(function(point){
 				pointsStr += point[0]*SCALE+","+point[1]*SCALE+" ";
 			});
-			ship.pointsStr = pointsStr
-			field.selectAll(".ship").data(teams)
-				.attr("points",function(ship){return ship.pointsStr;});
+			field.select("#"+ship.color).attr("points",pointsStr);
 			
 			switch (ship.shape){
 				case "left wing":
@@ -243,6 +262,15 @@ function updateGraphics(team){
 					break;
 			}
 			ship.updateShape = false;
+		}
+		
+		if (!ship.alive) {
+			if (!ship.deathTime) {
+				field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
+			} else if (new Date() - ship.deathTime > deathDuration) {
+				//shipExplode(ship);
+				ship.deathTime = false;
+			}
 		}
 	});
 }
@@ -264,6 +292,7 @@ function teamMove(team,action) {
 				ship.rot = ship.rot - ship.turnRate;
 				break;
 			case "hyperspace":
+				ship.hyperTime = new Date();
 				break;
 		}
 	}
@@ -574,6 +603,56 @@ function lineIntersection(L1, L2) {
 			return [];
 		}
 	}
+}
+
+var debris = [];
+function shipDebris(ship,kind) {
+	var cx,cy,num;
+	cx = ship.x;
+	cy = ship.y;
+	switch(kind) {
+		case "kill full":
+			num = 11;
+			break;
+		case "kill left":
+			num = 7;
+			break;
+		case "kill right":
+			num = 7;
+			break;
+		case "kill nose":
+			num = 3;
+			break;
+		case "damage left":
+			num = 4;
+			break;
+		case "damage right":
+			num = 4;
+			break;
+	}
+	
+	for (var i=0; i<num; i++) {
+		var pointsStr = "";
+		for (var j=0; j<3; j++) {
+			var rad = Math.random()*3+5;
+			var ang = Math.random()*10-5 + j*120;
+			var x = rad*Math.cos(Math.radians(ang)) + cx;
+			var y = rad*Math.sin(Math.radians(ang)) + cy;
+			pointsStr += x+","+y+" ";
+		}
+		var rotVel = Math.random()*2-1;
+		var rot = Math.random()*360;
+		
+		fragment = {'x':cx, 'y':cy, 'pointsStr':pointsStr, 'rot':rot, 'rotVel':rotVel, 'color':ship.deadColor}
+		debris.push(fragment);
+	}
+		
+	field.selectAll('.debris').data(debris)
+	  .enter().append("polygon")
+		.attr("points",function(d){ return d.pointsStr; })
+		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
+		.attr("class","debris")
+		.style("fill",function(d){ return d.color });
 }
 
 var keystates = {};
