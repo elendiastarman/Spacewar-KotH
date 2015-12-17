@@ -109,6 +109,7 @@ function setup() {
 			
 		ship.deathTime = false;
 		ship.hyperTime = false;
+		ship.exploded = false;
 		ship.alive = true;
 		
 		field.select("#"+ship.color).style("fill",ship.color);
@@ -212,10 +213,12 @@ function updatePositions(){
 	
 	teams.forEach(function(ship){
 		if (!ship.hyperTime) {
-			ship.x += ship.xv;
-			ship.x = (ship.x+fieldWidth)%fieldWidth;
-			ship.y += ship.yv;
-			ship.y = (ship.y+fieldHeight)%fieldHeight;
+			if (!ship.exploded) {
+				ship.x += ship.xv;
+				ship.x = (ship.x+fieldWidth)%fieldWidth;
+				ship.y += ship.yv;
+				ship.y = (ship.y+fieldHeight)%fieldHeight;
+			}
 			
 			if (!ship.alive) {
 				ship.xv = 0;
@@ -235,6 +238,12 @@ function updatePositions(){
 			ship.xv = 0;
 			ship.yv = 0;
 		}
+	});
+	
+	debris.forEach(function(fragment){
+		fragment.x += fragment.xv;
+		fragment.y += fragment.yv;
+		fragment.rot += fragment.rotVel;
 	});
 }
 
@@ -267,12 +276,45 @@ function updateGraphics(team){
 		if (!ship.alive) {
 			if (!ship.deathTime) {
 				field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
-			} else if (new Date() - ship.deathTime > deathDuration) {
-				//shipExplode(ship);
-				ship.deathTime = false;
+				ship.deathTime = new Date();
+			} else if (new Date() - ship.deathTime > deathDuration && ship.exploded === false) {
+				switch (ship.shape) {
+					case "full ship":
+						shipDebris(ship,"kill full");
+						break;
+					case "left wing":
+						shipDebris(ship,"kill left");
+						break;
+					case "right wing":
+						shipDebris(ship,"kill right");
+						break;
+					case "nose only":
+						shipDebris(ship,"kill nose");
+						break;
+				}
+
+				ship.exploded = true;
+				ship.x = -200;
+				ship.y = -200;
+				d3.select('#'+ship.color).attr("transform","translate(-200,-200)");
 			}
 		}
 	});
+	
+	var filteredDebris = [];
+	var now = new Date();
+	for (var i=0; i<debris.length; i++) {
+		// console.log("debris[i].time = "+debris[i].time);
+		// console.log(now - debris[i].time);
+		if (now < debris[i].time) { filteredDebris.push(debris[i]); }
+	}
+	debris = filteredDebris;
+	
+	field.selectAll('.debris').data(debris)
+		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
+		.attr("points",function(d){ return d.pointsStr; })
+		.style("fill",function(d){ return d.color; });
+	field.selectAll('.debris').data(debris).exit().remove();
 }
 
 function teamMove(team,action) {
@@ -484,16 +526,14 @@ function checkMissileCollision(m, obj) {
 				m.live = false;
 				if (!ship.alive){return;}
 				
-				field.append("circle")
-					.attr("cx",closestIntersection[0][0])
-					.attr("cy",closestIntersection[0][1])
-					.attr("r",2)
-					.style("fill","cyan")
-					.attr("class",'missileHit'+ship.color);
-				
-				console.log("t: "+closestIntersection[0]);
-				console.log("u: "+closestIntersection[1]);
-				console.log("j: "+closestIntersection[2]);
+				if (showIntersections) {
+					field.append("circle")
+						.attr("cx",closestIntersection[0][0])
+						.attr("cy",closestIntersection[0][1])
+						.attr("r",2)
+						.style("fill","cyan")
+						.attr("class",'missileHit'+ship.color);
+				}
 				
 				if (ship.shape === "full ship") {
 					switch(closestIntersection[2]) {
@@ -503,6 +543,7 @@ function checkMissileCollision(m, obj) {
 							} else {
 								ship.shape = "right wing";
 								ship.updateShape = true;
+								shipDebris(ship,"damage left");
 							}
 							break;
 						case 1:
@@ -511,14 +552,17 @@ function checkMissileCollision(m, obj) {
 							} else {
 								ship.shape = "left wing";
 								ship.updateShape = true;
+								shipDebris(ship,"damage right");
 							}
 							break;
 						case 2:
 							ship.updateShape = true;
 							if (closestIntersection[1][1] < 0.5) { //hit on the right side
 								ship.shape = "left wing";
+								shipDebris(ship,"damage right");
 							} else {
 								ship.shape = "right wing";
+								shipDebris(ship,"damage left");
 							}
 							break;
 					}
@@ -530,6 +574,7 @@ function checkMissileCollision(m, obj) {
 							} else {
 								ship.shape = "nose only";
 								ship.updateShape = true;
+								shipDebris(ship,"damage left");
 							}
 							break;
 						case 1:
@@ -540,6 +585,7 @@ function checkMissileCollision(m, obj) {
 						case 4:
 							ship.shape = "nose only";
 							ship.updateShape = true;
+							shipDebris(ship,"damage left");
 							break;
 					}
 				} else if (ship.shape === "right wing") {
@@ -550,6 +596,7 @@ function checkMissileCollision(m, obj) {
 							} else {
 								ship.shape = "nose only";
 								ship.updateShape = true;
+								shipDebris(ship,"damage right");
 							}
 							break;
 						case 0:
@@ -560,6 +607,7 @@ function checkMissileCollision(m, obj) {
 						case 3:
 							ship.shape = "nose only";
 							ship.updateShape = true;
+							shipDebris(ship,"damage right");
 							break;
 					}
 				} else if (ship.shape === "nose only") {
@@ -607,46 +655,69 @@ function lineIntersection(L1, L2) {
 
 var debris = [];
 function shipDebris(ship,kind) {
+	console.log("Kaboom.");
 	var cx,cy,num;
-	cx = ship.x;
-	cy = ship.y;
 	switch(kind) {
 		case "kill full":
 			num = 11;
+			cx = ship.x;
+			cy = ship.y;
 			break;
 		case "kill left":
 			num = 7;
+			cx = ship.x + 3*Math.cos(Math.radians(ship.rot+180));
+			cy = ship.y + 3*Math.sin(Math.radians(ship.rot+180));
 			break;
 		case "kill right":
 			num = 7;
+			cx = ship.x + 3*Math.cos(Math.radians(ship.rot));
+			cy = ship.y + 3*Math.sin(Math.radians(ship.rot));
 			break;
 		case "kill nose":
 			num = 3;
+			cx = ship.x + 2*Math.cos(Math.radians(ship.rot-90));
+			cy = ship.y + 2*Math.sin(Math.radians(ship.rot-90));
 			break;
 		case "damage left":
 			num = 4;
+			cx = ship.x + 10*Math.cos(Math.radians(ship.rot+120));
+			cy = ship.y + 10*Math.sin(Math.radians(ship.rot+120));
 			break;
 		case "damage right":
 			num = 4;
+			cx = ship.x + 10*Math.cos(Math.radians(ship.rot+60));
+			cy = ship.y + 10*Math.sin(Math.radians(ship.rot+60));
 			break;
 	}
+	// field.append("circle")
+		// .attr("cx",cx)
+		// .attr("cy",cy)
+		// .attr("r",2)
+		// .style("fill","magenta")
 	
 	for (var i=0; i<num; i++) {
 		var pointsStr = "";
 		for (var j=0; j<3; j++) {
-			var rad = Math.random()*3+5;
+			var rad = Math.random()*5+3;
 			var ang = Math.random()*10-5 + j*120;
-			var x = rad*Math.cos(Math.radians(ang)) + cx;
-			var y = rad*Math.sin(Math.radians(ang)) + cy;
+			var x = rad*Math.cos(Math.radians(ang));
+			var y = rad*Math.sin(Math.radians(ang));
 			pointsStr += x+","+y+" ";
 		}
 		var rotVel = Math.random()*2-1;
 		var rot = Math.random()*360;
+		var now = new Date();
+		var time = new Date(now.getTime() + 1000 + Math.floor(Math.random()*500)); //http://stackoverflow.com/a/17267937/1473772
+		// console.log("time: "+time);
+		var xv = Math.random()*2-1;
+		var yv = Math.random()*2-1;
 		
-		fragment = {'x':cx, 'y':cy, 'pointsStr':pointsStr, 'rot':rot, 'rotVel':rotVel, 'color':ship.deadColor}
+		var fragment = {'x':cx, 'y':cy, 'xv':xv, 'yv':yv,
+						'rot':rot, 'rotVel':rotVel,
+						'pointsStr':pointsStr, 'color':ship.deadColor, 'time':time}
 		debris.push(fragment);
 	}
-		
+	
 	field.selectAll('.debris').data(debris)
 	  .enter().append("polygon")
 		.attr("points",function(d){ return d.pointsStr; })
