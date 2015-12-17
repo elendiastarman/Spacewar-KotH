@@ -47,10 +47,10 @@ for (var i=0; i<8; i++) {
 var missileTimeout = 2250;
 var missileSpeed = 10;
 var fireRateLimit = 100;
-var gravityStrength = 1*6000;
+var gravityStrength = 1*5000;
 var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
-var engineThrust = 0.35;
+var engineThrust = 0.30;
 
 var showIntersections = true;
 
@@ -68,14 +68,14 @@ function init() {
 		.attr("height",fieldHeight)
 		.attr("fill","black");
 	
-	svg.append("circle") //sun
+	field.append("circle") //sun
 		.attr("cx",sun.cx)
 		.attr("cy",sun.cy)
 		.attr("r", sun.r*SCALE)
 		.style("fill","white")
 		.attr("id","sun");
 	
-	d3.select('svg').selectAll(".ship").data(teams).enter().append("polygon")
+	field.selectAll(".ship").data(teams).enter().append("polygon")
 		.attr("id", function(d){console.log(d.color); return d.color;})
 		.attr("fill", function(d){return d.color;})
 		.attr("class", "ship");
@@ -218,34 +218,50 @@ function updatePositions(){
 }
 
 function updateGraphics(team){
-	teams.forEach(function(teamObj){
-		d3.select("#"+teamObj.color).attr("transform","translate("+teamObj.x+","+teamObj.y+"),rotate("+teamObj.rot+")");
+	teams.forEach(function(ship){
+		field.selectAll(".ship").data(teams)
+			.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
 		
-		if (teamObj.updateShape) {
+		if (ship.updateShape) {
 			var pointsStr = "";
-			shipShapes[teamObj.shape].forEach(function(point){
+			shipShapes[ship.shape].forEach(function(point){
 				pointsStr += point[0]*SCALE+","+point[1]*SCALE+" ";
 			});
-			d3.select("#"+teamObj.color).attr("points",pointsStr);
+			ship.pointsStr = pointsStr
+			field.selectAll(".ship").data(teams)
+				.attr("points",function(ship){return ship.pointsStr;});
+			
+			switch (ship.shape){
+				case "left wing":
+				case "right wing":
+					ship.thrust /= 2.;
+					ship.turnRate /= 2.;
+					break;
+				case "nose only":
+					ship.thrust = 0;
+					ship.turnRate = 0;
+					break;
+			}
+			ship.updateShape = false;
 		}
 	});
 }
 
 function teamMove(team,action) {
-	var teamObj = window[team];
-	if (teamObj.alive) {
+	var ship = window[team];
+	if (ship.alive) {
 		switch (action){
-			case "thrust":
+			case "fire engine":
 				fireEngine(team);
 				break;
-			case "fire":
+			case "fire missile":
 				fireMissile(team);
 				break;
 			case "turn right":
-				teamObj.rot = teamObj.rot + teamObj.turnRate;
+				ship.rot = ship.rot + ship.turnRate;
 				break;
 			case "turn left":
-				teamObj.rot = teamObj.rot - teamObj.turnRate;
+				ship.rot = ship.rot - ship.turnRate;
 				break;
 			case "hyperspace":
 				break;
@@ -254,24 +270,24 @@ function teamMove(team,action) {
 }
 
 function fireEngine(team) {
-	var teamObj = window[team];
-	var speed = teamObj.xv*teamObj.xv + teamObj.yv*teamObj.yv;
+	var ship = window[team];
+	var speed = ship.xv*ship.xv + ship.yv*ship.yv;
 	
-	var nxv = teamObj.xv + teamObj.thrust*Math.cos(Math.radians(teamObj.rot-90));
-	var nyv = teamObj.yv + teamObj.thrust*Math.sin(Math.radians(teamObj.rot-90));
+	var nxv = ship.xv + ship.thrust*Math.cos(Math.radians(ship.rot-90));
+	var nyv = ship.yv + ship.thrust*Math.sin(Math.radians(ship.rot-90));
 	var speed2 = nxv*nxv + nyv*nyv;
 	
 	if (speed < speedLimit*speedLimit || speed2 < speed) { //either slow enough or slowing down
-		teamObj.xv = nxv;
-		teamObj.yv = nyv;
+		ship.xv = nxv;
+		ship.yv = nyv;
 		
 		if (speed2 > speed && speed2 > speedLimit*speedLimit) {
-			teamObj.xv = speedLimit*teamObj.xv/Math.sqrt(speed2);
-			teamObj.yv = speedLimit*teamObj.yv/Math.sqrt(speed2);
+			ship.xv = speedLimit*ship.xv/Math.sqrt(speed2);
+			ship.yv = speedLimit*ship.yv/Math.sqrt(speed2);
 		}
 	} else {
-		teamObj.xv = Math.sqrt(speed)*nxv/Math.sqrt(speed2);
-		teamObj.yv = Math.sqrt(speed)*nyv/Math.sqrt(speed2);
+		ship.xv = Math.sqrt(speed)*nxv/Math.sqrt(speed2);
+		ship.yv = Math.sqrt(speed)*nyv/Math.sqrt(speed2);
 	}
 }
 
@@ -446,24 +462,31 @@ function checkMissileCollision(m, obj) {
 					.style("fill","cyan")
 					.attr("class",'missileHit'+ship.color);
 				
+				console.log("t: "+closestIntersection[0]);
+				console.log("u: "+closestIntersection[1]);
+				console.log("j: "+closestIntersection[2]);
+				
 				if (ship.shape === "full ship") {
 					switch(closestIntersection[2]) {
 						case 0:
-							if (closestIntersection[1] > 0.5) { //hit on the nose
+							if (closestIntersection[1][1] > 0.5) { //hit on the nose
 								ship.alive = false;
 							} else {
 								ship.shape = "right wing";
+								ship.updateShape = true;
 							}
 							break;
 						case 1:
-							if (closestIntersection[1] < 0.5) { //hit on the nose
+							if (closestIntersection[1][1] < 0.5) { //hit on the nose
 								ship.alive = false;
 							} else {
 								ship.shape = "left wing";
+								ship.updateShape = true;
 							}
 							break;
 						case 2:
-							if (closestIntersection[1] < 0.5) { //hit on the right side
+							ship.updateShape = true;
+							if (closestIntersection[1][1] < 0.5) { //hit on the right side
 								ship.shape = "left wing";
 							} else {
 								ship.shape = "right wing";
@@ -473,10 +496,11 @@ function checkMissileCollision(m, obj) {
 				} else if (ship.shape === "left wing") {
 					switch(closestIntersection[2]) {
 						case 0:
-							if (closestIntersection[1] > 0.5) { //hit on the nose
+							if (closestIntersection[1][1] > 0.5) { //hit on the nose
 								ship.alive = false;
 							} else {
 								ship.shape = "nose only";
+								ship.updateShape = true;
 							}
 							break;
 						case 1:
@@ -486,15 +510,17 @@ function checkMissileCollision(m, obj) {
 						case 3:
 						case 4:
 							ship.shape = "nose only";
+							ship.updateShape = true;
 							break;
 					}
 				} else if (ship.shape === "right wing") {
 					switch(closestIntersection[2]) {
 						case 1:
-							if (closestIntersection[1] < 0.5) { //hit on the nose
+							if (closestIntersection[1][1] < 0.5) { //hit on the nose
 								ship.alive = false;
 							} else {
 								ship.shape = "nose only";
+								ship.updateShape = true;
 							}
 							break;
 						case 0:
@@ -504,6 +530,7 @@ function checkMissileCollision(m, obj) {
 						case 2:
 						case 3:
 							ship.shape = "nose only";
+							ship.updateShape = true;
 							break;
 					}
 				} else if (ship.shape === "nose only") {
@@ -597,11 +624,11 @@ function checkKeys() {
 					teamMove("red","hyperspace");
 					break;
 				case 86:
-					teamMove("red","thrust");
+					teamMove("red","fire engine");
 					break;
 				case 66:
 					if (new Date() - window["red"].fireTime > fireRateLimit && window["red"].missileReady) {
-						teamMove("red","fire");
+						teamMove("red","fire missile");
 						window["red"].fireTime = new Date();
 						window["red"].missileReady = false;
 					}
@@ -618,11 +645,11 @@ function checkKeys() {
 					teamMove("blue","hyperspace");
 					break;
 				case 190:
-					teamMove("blue","thrust");
+					teamMove("blue","fire engine");
 					break;
 				case 191:
 					if (new Date() - window["blue"].fireTime > fireRateLimit && window["blue"].missileReady) {
-						teamMove("blue","fire");
+						teamMove("blue","fire missile");
 						window["blue"].fireTime = new Date();
 						window["blue"].missileReady = false;
 					}
