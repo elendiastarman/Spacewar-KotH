@@ -45,6 +45,7 @@ for (var i=0; i<8; i++) {
 }
 
 var missileTimeout = 2250;
+var missileSpeed = 10;
 var fireRateLimit = 100;
 var gravityStrength = 1*6000;
 var speedLimit = 15; //engine propulsion
@@ -173,18 +174,6 @@ function updatePositions(){
 	
 	//checkShipsCollision(teams[0],teams[1]);
 	
-	teams.forEach(function(ship){
-		ship.x += ship.xv;
-		ship.x = (ship.x+fieldWidth)%fieldWidth;
-		ship.y += ship.yv;
-		ship.y = (ship.y+fieldHeight)%fieldHeight;
-		
-		if (!ship.alive) {
-			ship.xv = 0;
-			ship.yv = 0;
-		}
-	});
-	
 	missiles.forEach(function(m){
 		var dx = m.x - sun.attr('cx');
 		var dy = m.y - sun.attr('cy');
@@ -212,6 +201,18 @@ function updatePositions(){
 		if (m.live) {
 			m.x = (m.nx+fieldWidth)%fieldWidth;
 			m.y = (m.ny+fieldHeight)%fieldHeight;
+		}
+	});
+	
+	teams.forEach(function(ship){
+		ship.x += ship.xv;
+		ship.x = (ship.x+fieldWidth)%fieldWidth;
+		ship.y += ship.yv;
+		ship.y = (ship.y+fieldHeight)%fieldHeight;
+		
+		if (!ship.alive) {
+			ship.xv = 0;
+			ship.yv = 0;
 		}
 	});
 }
@@ -274,7 +275,9 @@ function fireEngine(team) {
 	}
 }
 
-function checkShipSunCollision(ship) {
+function checkShipSunCollision(ship, checkOnly) {
+	checkOnly = typeof a !== 'undefined' ? checkOnly : false; //http://stackoverflow.com/a/894877/1473772
+	
 	var sPoints = getShipCoords(ship);
 	var tPoints;
 	var speed = Math.sqrt(ship.xv*ship.xv+ship.yv*ship.yv);
@@ -308,6 +311,8 @@ function checkShipSunCollision(ship) {
 				
 				var intersection = lineIntersection(L1,L2);
 				if (intersection.length) {
+					if (checkOnly) {return true;}
+					
 					if (showIntersections) {
 						console.log('Checkbox is checked!');
 						var shiftedPoints = [];
@@ -338,6 +343,8 @@ function checkShipSunCollision(ship) {
 			}
 		}
 	}
+	
+	if (checkOnly) {return false;}
 }
 
 function getShipCoords(ship) {
@@ -357,10 +364,17 @@ var missiles = [];
 function fireMissile(team) {
 	var mx,my,mxv,myv;
 	var p = window[team];
-	mxv = p.xv + 10*Math.cos(Math.radians(p.rot-90));
-	myv = p.yv + 10*Math.sin(Math.radians(p.rot-90));
-	mx = p.x + mxv;
-	my = p.y + myv;
+	mx = p.x + 10*Math.cos(Math.radians(p.rot-90)); //adjusted to appear at the tip of the nose
+	my = p.y + 10*Math.sin(Math.radians(p.rot-90));
+	mxv = p.xv + missileSpeed*Math.cos(Math.radians(p.rot-90));
+	myv = p.yv + missileSpeed*Math.sin(Math.radians(p.rot-90));
+	
+	console.log(mx+","+my+"; "+mxv+","+myv);
+	
+	var dx = sun.x - mx;
+	var dy = sun.y - my;
+	var dis = Math.sqrt(dx*dx+dy*dy);
+	if (dis <= sun.r || checkShipSunCollision(p,true)) { console.log("returning early"); return; }
 	
 	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
 	missiles[missiles.length-1]['id'] = missiles.length;
