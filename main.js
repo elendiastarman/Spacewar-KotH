@@ -57,6 +57,7 @@ var engineThrust = 0.30;
 var hyperDuration = 1000;
 var deathDuration = 1000;
 
+var restartTime = false;
 var showIntersections = false;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
@@ -129,6 +130,12 @@ function setup() {
 
 function update() {
 	checkKeys();
+	
+	if (restartTime && new Date() - restartTime > 3000) {
+		setup();
+		restartTime = false;
+		return;
+	}
 	
 	if (missiles.length){
 		var filteredMissiles = [];
@@ -294,6 +301,7 @@ function updateGraphics(team){
 				}
 
 				ship.exploded = true;
+				restartTime = new Date();
 				ship.x = -200;
 				ship.y = -200;
 				d3.select('#'+ship.color).attr("transform","translate(-200,-200)");
@@ -708,7 +716,6 @@ function shipDebris(ship,kind) {
 		var rot = Math.random()*360;
 		var now = new Date();
 		var time = new Date(now.getTime() + 1000 + Math.floor(Math.random()*500)); //http://stackoverflow.com/a/17267937/1473772
-		// console.log("time: "+time);
 		var xv = Math.random()*2-1;
 		var yv = Math.random()*2-1;
 		
