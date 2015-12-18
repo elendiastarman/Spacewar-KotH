@@ -47,6 +47,7 @@ for (var i=0; i<8; i++) {
 var missileTimeout = 2250;
 var missileSpeed = 10;
 var fireRateLimit = 100;
+var missileMax = 20;
 
 var gravityStrength = 1*5000;
 
@@ -103,6 +104,7 @@ function setup() {
 		ship.yv = 0.0;
 		ship.fireTime = new Date() - 1000;
 		ship.missileReady = true;
+		ship.missileStock = missileMax;
 		ship.updateShape = true;
 		ship.shape = "full ship";
 		ship.thrust = engineThrust;
@@ -284,6 +286,7 @@ function updateGraphics(team){
 			if (!ship.deathTime) {
 				field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
 				ship.deathTime = new Date();
+				restartTime = new Date();
 			} else if (new Date() - ship.deathTime > deathDuration && ship.exploded === false) {
 				switch (ship.shape) {
 					case "full ship":
@@ -301,7 +304,6 @@ function updateGraphics(team){
 				}
 
 				ship.exploded = true;
-				restartTime = new Date();
 				ship.x = -200;
 				ship.y = -200;
 				d3.select('#'+ship.color).attr("transform","translate(-200,-200)");
@@ -333,7 +335,10 @@ function teamMove(team,action) {
 				fireEngine(team);
 				break;
 			case "fire missile":
-				fireMissile(team);
+				if (ship.missileStock) {
+					fireMissile(team);
+					ship.missileStock -= 1;
+				}
 				break;
 			case "turn right":
 				ship.rot = ship.rot + ship.turnRate;
@@ -457,6 +462,7 @@ function getShipCoords(ship) {
 
 var missiles = [];
 function fireMissile(team) {
+	console.log("pew pew");
 	var mx,my,mxv,myv;
 	var p = window[team];
 	mx = p.x + 10*Math.cos(Math.radians(p.rot-90)); //adjusted to appear at the tip of the nose
