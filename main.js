@@ -31,7 +31,12 @@ var shipShapes = {
 	'full ship': [[-8,16],[0,-8],[8,16]],
 	'left wing': [[-8,16],[0,-8],[4,4],[0,8],[0,16]],
 	'right wing':[[-4,4],[0,-8],[8,16],[0,16],[0,8]],
-	'nose only': [[-4,4],[0,-8],[4,4],[0,8]]}
+	'nose only': [[-4,4],[0,-8],[4,4],[0,8]]
+};
+var engineFlame = [
+	[[-4,16],[0,20],[4,16]],
+	[[-4,16],[0,24],[4,16]]
+];
 
 var field;
 var fieldWidth = 800;
@@ -114,9 +119,14 @@ function init() {
 		.attr("id","sun");
 	
 	field.selectAll(".ship").data(teams).enter().append("polygon")
-		.attr("id", function(d){console.log(d.color); return d.color;})
+		.attr("id", function(d){return d.color;})
 		.attr("fill", function(d){return d.color;})
 		.attr("class", "ship");
+	
+	field.selectAll(".flame").data(teams).enter().append("polygon")
+		.attr("id", function(d){return "flame"+d.color;})
+		.attr("fill", function(d){return d.flame-1 ? "yellow" : "lightyellow";})
+		.attr("class", "flame");
 
 	startTime = new Date();
 	teams.forEach(function(ship){
@@ -144,12 +154,15 @@ function setup() {
 		ship.updateShape = true;
 		ship.shape = "full ship";
 		ship.thrust = engineThrust;
+		ship.flame = 0;
 		ship.turnRate = 5;
 			
 		ship.deathTime = false;
 		ship.hyperTime = false;
 		ship.exploded = false;
 		ship.alive = true;
+		
+		ship.flame = 0;
 		
 		field.select("#"+ship.color).style("fill",ship.color);
 	});
@@ -300,9 +313,19 @@ function updateGraphics(team){
 	d3.selectAll('.text').data(textInfo)
 		.text(function(d){ return d.getText(); });
 	
+	field.selectAll(".ship").data(teams)
+		.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
+	
+	field.selectAll(".flame").data(teams)
+		.attr("transform",function(ship){return "translate("+(ship.flame && ship.alive ? ship.x : -200)+","+(ship.flame && ship.alive ? ship.y : -200)+"),rotate("+ship.rot+")";})
+		.attr("points",function(ship){
+			var pointsStr = "";
+			// console.log(ship.color+" "+ship.flame);
+			engineFlame[0+(ship.flame>1)].forEach(function(P){ pointsStr += P[0]+","+P[1]+" "; });
+			return pointsStr;
+		});
+	
 	teams.forEach(function(ship){
-		field.selectAll(".ship").data(teams)
-			.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
 		
 		if (ship.updateShape) {
 			var pointsStr = "";
@@ -512,7 +535,6 @@ function getShipCoords(ship) {
 
 var missiles = [];
 function fireMissile(team) {
-	console.log("pew pew");
 	var mx,my,mxv,myv;
 	var p = window[team];
 	mx = p.x + 10*Math.cos(Math.radians(p.rot-90)); //adjusted to appear at the tip of the nose
@@ -520,12 +542,10 @@ function fireMissile(team) {
 	mxv = p.xv + missileSpeed*Math.cos(Math.radians(p.rot-90));
 	myv = p.yv + missileSpeed*Math.sin(Math.radians(p.rot-90));
 	
-	console.log(mx+","+my+"; "+mxv+","+myv);
-	
 	var dx = sun.x - mx;
 	var dy = sun.y - my;
 	var dis = Math.sqrt(dx*dx+dy*dy);
-	if (dis <= sun.r || checkShipSunCollision(p,true)) { console.log("returning early"); return; }
+	if (dis <= sun.r || checkShipSunCollision(p,true)) { return; }
 	
 	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
 	missiles[missiles.length-1]['id'] = missiles.length;
@@ -719,7 +739,6 @@ function lineIntersection(L1, L2) {
 
 var debris = [];
 function shipDebris(ship,kind) {
-	console.log("Kaboom.");
 	var cx,cy,num;
 	switch(kind) {
 		case "kill full":
@@ -838,6 +857,7 @@ function checkKeys() {
 					teamMove("red","hyperspace");
 					break;
 				case 86:
+					window["red"].flame = window["red"].flame ? 3-window["red"].flame : 1;
 					teamMove("red","fire engine");
 					break;
 				case 66:
@@ -859,6 +879,7 @@ function checkKeys() {
 					teamMove("blue","hyperspace");
 					break;
 				case 190:
+					window["blue"].flame = window["blue"].flame ? 3-window["blue"].flame : 1;
 					teamMove("blue","fire engine");
 					break;
 				case 191:
@@ -867,6 +888,15 @@ function checkKeys() {
 						window["blue"].fireTime = new Date();
 						window["blue"].missileReady = false;
 					}
+					break;
+			}
+		} else {
+			switch (k){
+				case 86:
+					red.flame = 0;
+					break;
+				case 190:
+					blue.flame = 0;
 					break;
 			}
 		}
