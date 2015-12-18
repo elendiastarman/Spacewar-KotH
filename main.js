@@ -61,6 +61,23 @@ var deathDuration = 1000;
 var restartTime = false;
 var gameDuration = 90;
 var startTime;
+
+function getRemainingTime() {
+	var elapsedTime = new Date() - startTime;
+	var remainingTime = gameDuration - (Math.floor(elapsedTime/1000));
+	if (remainingTime > 0) {
+		return Math.floor(remainingTime/60)+":"+(("00"+remainingTime%60).slice(-2));
+	} else {
+		return "GAME OVER";
+	}
+}
+var timeLeft = {'name':'time-left', 'x':fieldWidth/2, 'color':'lightgray', 'getText':getRemainingTime};
+var redScore = {'name':'red-score', 'x':fieldWidth/2-150, 'color':'red', 'getText':function(){ return red.score; }};
+var blueScore = {'name':'blue-score', 'x':fieldWidth/2+150, 'color':'blue', 'getText':function(){ return blue.score; }};
+var redStock = {'name':'red-stock', 'x':10, 'y':20, 'color':'red', 'fontsize':'15px', 'align':'start', 'getText':function(){ return "Missiles: "+window['red'].missileStock; }};
+var blueStock = {'name':'blue-stock', 'x':fieldWidth-10, 'y':20, 'color':'blue', 'fontsize':'15px', 'align':'end', 'getText':function(){ return "Missiles: "+window['blue'].missileStock; }};
+var textInfo = [timeLeft,redScore,blueScore,redStock,blueStock];
+
 var showIntersections = false;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
@@ -76,6 +93,18 @@ function init() {
 		.attr("width",fieldWidth)
 		.attr("height",fieldHeight)
 		.attr("fill","black");
+		
+	svg.selectAll('.text').data(textInfo)
+	  .enter().append("text") //time and scores
+		.attr("id",function(d){ return d.name; })
+		.attr("x",function(d){ return d.x; })
+		.attr("y",function(d){ return d.y || 30; })
+		.attr("font-family","sans-serif")
+		.attr("font-size",function(d){ return d.fontsize || "30px"; })
+		.attr("fill",function(d){ return d.color; })
+		.attr("class","text")
+		.attr("text-anchor",function(d){ return d.align || "middle";})
+		.text(function(d){ return d.getText(); });
 	
 	field.append("circle") //sun
 		.attr("cx",sun.cx)
@@ -88,11 +117,14 @@ function init() {
 		.attr("id", function(d){console.log(d.color); return d.color;})
 		.attr("fill", function(d){return d.color;})
 		.attr("class", "ship");
+
+	startTime = new Date();
+	teams.forEach(function(ship){
+		ship.score = 0;
+	});
 }
 
 function setup() {
-	startTime = new Date();
-	
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	red.rot = 90;
@@ -117,7 +149,6 @@ function setup() {
 		ship.deathTime = false;
 		ship.hyperTime = false;
 		ship.exploded = false;
-		ship.score = 0;
 		ship.alive = true;
 		
 		field.select("#"+ship.color).style("fill",ship.color);
@@ -136,15 +167,17 @@ function setup() {
 }
 
 function update() {
-	checkKeys();
-	
 	if (new Date() - startTime > gameDuration*1000) {
+		timeLeft.text = "GAME OVER";
+		updateGraphics();
 		return;
 	} else if (restartTime && new Date() - restartTime > 3000) {
 		setup();
 		restartTime = false;
 		return;
 	}
+	
+	checkKeys();
 	
 	if (missiles.length){
 		var filteredMissiles = [];
@@ -264,6 +297,9 @@ function updatePositions(){
 }
 
 function updateGraphics(team){
+	d3.selectAll('.text').data(textInfo)
+		.text(function(d){ return d.getText(); });
+	
 	teams.forEach(function(ship){
 		field.selectAll(".ship").data(teams)
 			.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
@@ -294,6 +330,13 @@ function updateGraphics(team){
 				field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
 				ship.deathTime = new Date();
 				restartTime = new Date();
+				
+				if (ship.color === "red") {
+					blue.score += 1;
+				} else if (ship.color === "blue") {
+					red.score += 1;
+				}
+				
 			} else if (new Date() - ship.deathTime > deathDuration && ship.exploded === false) {
 				switch (ship.shape) {
 					case "full ship":
@@ -758,6 +801,7 @@ function handleInput(event) {
 		if (!renderLoop){ renderLoop = setInterval(update, 30); }
 		return;
 	} else if (event.which == 83 && event.type == 'keyup'){ //S key, resets field
+		startTime = new Date();
 		setup();
 	}
 	
