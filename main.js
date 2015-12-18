@@ -9,7 +9,7 @@ var renderLoop;
 		renderLoop = setInterval(update, 30);
 		$(document).keydown(handleInput);
 		$(document).keyup(handleInput);
-		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*6000; });
+		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*5000; });
 		$('#showIntersections').on('change', function(){
 			showIntersections = !showIntersections;
 			teams.forEach(function(ship){
@@ -59,6 +59,8 @@ var hyperDuration = 1000;
 var deathDuration = 1000;
 
 var restartTime = false;
+var gameDuration = 90;
+var startTime;
 var showIntersections = false;
 
 Math.radians = function(degrees) { return degrees * Math.PI / 180; };
@@ -89,6 +91,8 @@ function init() {
 }
 
 function setup() {
+	startTime = new Date();
+	
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	red.rot = 90;
@@ -113,6 +117,7 @@ function setup() {
 		ship.deathTime = false;
 		ship.hyperTime = false;
 		ship.exploded = false;
+		ship.score = 0;
 		ship.alive = true;
 		
 		field.select("#"+ship.color).style("fill",ship.color);
@@ -133,7 +138,9 @@ function setup() {
 function update() {
 	checkKeys();
 	
-	if (restartTime && new Date() - restartTime > 3000) {
+	if (new Date() - startTime > gameDuration*1000) {
+		return;
+	} else if (restartTime && new Date() - restartTime > 3000) {
 		setup();
 		restartTime = false;
 		return;
