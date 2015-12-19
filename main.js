@@ -33,10 +33,11 @@ var shipShapes = {
 	'right wing':[[-4,4],[0,-8],[8,16],[0,16],[0,8]],
 	'nose only': [[-4,4],[0,-8],[4,4],[0,8]]
 };
-var engineFlame = [
-	[[-4,16],[0,20],[4,16]],
-	[[-4,16],[0,24],[4,16]]
-];
+var engineFlame = {
+	'full ship':[[[-4,16],[0,20],[4,16]],[[-4,16],[0,24],[4,16]]],
+	'left wing':[[[-4,16],[0,20],[0,16]],[[-4,16],[0,24],[0,16]]],
+	'right wing':[[[0,16],[0,20],[4,16]],[[0,16],[0,24],[4,16]]],
+}
 
 var field;
 var fieldWidth = 800;
@@ -320,8 +321,7 @@ function updateGraphics(team){
 		.attr("transform",function(ship){return "translate("+(ship.flame && ship.alive ? ship.x : -200)+","+(ship.flame && ship.alive ? ship.y : -200)+"),rotate("+ship.rot+")";})
 		.attr("points",function(ship){
 			var pointsStr = "";
-			// console.log(ship.color+" "+ship.flame);
-			engineFlame[0+(ship.flame>1)].forEach(function(P){ pointsStr += P[0]+","+P[1]+" "; });
+			engineFlame[ship.shape][0+(ship.flame>1)].forEach(function(P){ pointsStr += P[0]+","+P[1]+" "; });
 			return pointsStr;
 		});
 	
@@ -619,83 +619,32 @@ function checkMissileCollision(m, obj) {
 						.attr("class",'missileHit'+ship.color);
 				}
 				
-				if (ship.shape === "full ship") {
-					switch(closestIntersection[2]) {
-						case 0:
-							if (closestIntersection[1][1] > 0.5) { //hit on the nose
-								ship.alive = false;
-							} else {
-								ship.shape = "right wing";
-								ship.updateShape = true;
-								shipDebris(ship,"damage left");
-							}
-							break;
-						case 1:
-							if (closestIntersection[1][1] < 0.5) { //hit on the nose
-								ship.alive = false;
-							} else {
-								ship.shape = "left wing";
-								ship.updateShape = true;
-								shipDebris(ship,"damage right");
-							}
-							break;
-						case 2:
-							ship.updateShape = true;
-							if (closestIntersection[1][1] < 0.5) { //hit on the right side
-								ship.shape = "left wing";
-								shipDebris(ship,"damage right");
-							} else {
-								ship.shape = "right wing";
-								shipDebris(ship,"damage left");
-							}
-							break;
-					}
-				} else if (ship.shape === "left wing") {
-					switch(closestIntersection[2]) {
-						case 0:
-							if (closestIntersection[1][1] > 0.5) { //hit on the nose
-								ship.alive = false;
-							} else {
-								ship.shape = "nose only";
-								ship.updateShape = true;
-								shipDebris(ship,"damage left");
-							}
-							break;
-						case 1:
-						case 2:
+				var state = identifyDamage(ship, closestIntersection[2], closestIntersection[1][1]);
+				if (state) {
+					var debrisType;
+					switch (state) {
+						case "dead":
 							ship.alive = false;
+							debrisType = "kill "+ship.shape;
+							debrisType = debrisType.substr(0,debrisType.length-5);
 							break;
-						case 3:
-						case 4:
-							ship.shape = "nose only";
-							ship.updateShape = true;
-							shipDebris(ship,"damage left");
-							break;
-					}
-				} else if (ship.shape === "right wing") {
-					switch(closestIntersection[2]) {
-						case 1:
-							if (closestIntersection[1][1] < 0.5) { //hit on the nose
-								ship.alive = false;
-							} else {
-								ship.shape = "nose only";
-								ship.updateShape = true;
-								shipDebris(ship,"damage right");
-							}
-							break;
-						case 0:
-						case 4:
-							ship.alive = false;
-							break;
-						case 2:
-						case 3:
-							ship.shape = "nose only";
-							ship.updateShape = true;
+						case "left wing":
 							shipDebris(ship,"damage right");
 							break;
+						case "right wing":
+							shipDebris(ship,"damage left");
+							break;
+						case "nose only":
+							debrisType = "damage "+ship.shape;
+							debrisType = debrisType.substr(0,debrisType.length-5);
+							shipDebris(ship,debrisType);
+							break;
 					}
-				} else if (ship.shape === "nose only") {
-					ship.alive = false;
+					
+					if (state !== "dead") {
+						ship.shape = state;
+						ship.updateShape = true;
+					}
 				}
 				
 				if (!ship.alive){
@@ -707,6 +656,76 @@ function checkMissileCollision(m, obj) {
 			}
 		}
 	}
+}
+
+function identifyDamage(ship,which,where) {
+	var state;
+	
+	if (ship.shape === "full ship") {
+		switch(which) {
+			case 0:
+				if (where > 0.5) { //hit on the nose
+					state = "dead"
+				} else {
+					state = "right wing";
+				}
+				break;
+			case 1:
+				if (where < 0.5) { //hit on the nose
+					state = "dead"
+				} else {
+					state = "left wing";
+				}
+				break;
+			case 2:
+				if (where < 0.5) { //hit on the right side
+					state = "left wing";
+				} else {
+					state = "right wing";
+				}
+				break;
+		}
+	} else if (ship.shape === "left wing") {
+		switch(which) {
+			case 0:
+				if (where > 0.5) { //hit on the nose
+					state = "dead"
+				} else {
+					state = "nose only";
+				}
+				break;
+			case 1:
+			case 2:
+				state = "dead"
+				break;
+			case 3:
+			case 4:
+				state = "nose only";
+				break;
+		}
+	} else if (ship.shape === "right wing") {
+		switch(which) {
+			case 1:
+				if (where < 0.5) { //hit on the nose
+					state = "dead"
+				} else {
+					state = "nose only";
+				}
+				break;
+			case 0:
+			case 4:
+				state = "dead"
+				break;
+			case 2:
+			case 3:
+				state = "nose only";
+				break;
+		}
+	} else if (ship.shape === "nose only") {
+		state = "dead"
+	}
+	
+	return state;
 }
 
 function lineIntersection(L1, L2) {
@@ -821,6 +840,8 @@ function handleInput(event) {
 		return;
 	} else if (event.which == 83 && event.type == 'keyup'){ //S key, resets field
 		startTime = new Date();
+		red.score = 0;
+		blue.score = 0;
 		setup();
 	}
 	
@@ -857,8 +878,10 @@ function checkKeys() {
 					teamMove("red","hyperspace");
 					break;
 				case 86:
-					window["red"].flame = window["red"].flame ? 3-window["red"].flame : 1;
-					teamMove("red","fire engine");
+					if (window["red"].shape !== "nose only") {
+						window["red"].flame = window["red"].flame ? 3-window["red"].flame : 1;
+						teamMove("red","fire engine");
+					}
 					break;
 				case 66:
 					if (new Date() - window["red"].fireTime > fireRateLimit && window["red"].missileReady) {
@@ -879,8 +902,10 @@ function checkKeys() {
 					teamMove("blue","hyperspace");
 					break;
 				case 190:
-					window["blue"].flame = window["blue"].flame ? 3-window["blue"].flame : 1;
-					teamMove("blue","fire engine");
+					if (window["blue"].shape !== "nose only") {
+						window["blue"].flame = window["blue"].flame ? 3-window["blue"].flame : 1;
+						teamMove("blue","fire engine");
+					}
 					break;
 				case 191:
 					if (new Date() - window["blue"].fireTime > fireRateLimit && window["blue"].missileReady) {
