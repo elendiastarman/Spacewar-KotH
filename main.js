@@ -242,7 +242,7 @@ function updatePositions(){
 		}
 	});
 	
-	//checkShipsCollision(teams[0],teams[1]);
+	checkShipShipCollision(teams[0],teams[1]);
 	
 	missiles.forEach(function(m){
 		var dx = m.x - sun.attr('cx');
@@ -389,8 +389,6 @@ function updateGraphics(team){
 	var filteredDebris = [];
 	var now = new Date();
 	for (var i=0; i<debris.length; i++) {
-		// console.log("debris[i].time = "+debris[i].time);
-		// console.log(now - debris[i].time);
 		if (now < debris[i].time) { filteredDebris.push(debris[i]); }
 	}
 	debris = filteredDebris;
@@ -523,7 +521,112 @@ function checkShipSunCollision(ship, checkOnly) {
 }
 
 function checkShipShipCollision(ship1, ship2) {
+	var sPoints = getShipCoords(ship1);
+	var tPoints = getShipCoords(ship2);
+	var speed1 = Math.sqrt(ship1.xv*ship1.xv+ship1.yv*ship1.yv);
+	var speed2 = Math.sqrt(ship2.xv*ship2.xv+ship2.yv*ship2.yv);
+	var num = Math.max(Math.ceil(speed1), Math.ceil(speed2));
 	
+	var dx = ship1.x - ship2.x;
+	var dy = ship1.y - ship2.y;
+	var dis = Math.sqrt(dx*dx+dy*dy);
+	if (dis > 40) { return; } //pointless to check for a collision if they're far apart
+	
+	for (var i=0; i<=num; i++) {
+		var f = i/num;
+		
+		var states = [];
+		
+		for (var j=0; j<sPoints.length; j++) {
+			var j2 = (j+1)%sPoints.length;
+			var sx1 = sPoints[j][0] + f*ship1.xv;
+			var sy1 = sPoints[j][1] + f*ship1.yv;
+			var sx2 = sPoints[j2][0] + f*ship1.xv;
+			var sy2 = sPoints[j2][1] + f*ship1.yv;
+			var L1 = [[sx1,sy1],[sx2,sy2]];
+			
+			for (var k=0; k<tPoints.length; k++) {
+				var k2 = (k+1)%tPoints.length;
+				var tx1 = tPoints[k][0] + f*ship2.xv;
+				var ty1 = tPoints[k][1] + f*ship2.yv;
+				var tx2 = tPoints[k2][0] + f*ship2.xv;
+				var ty2 = tPoints[k2][1] + f*ship2.yv;
+				var L2 = [[tx1,ty1],[tx2,ty2]];
+				
+				var intersection = lineIntersection(L1,L2);
+				if (intersection.length) {
+					var state1 = identifyDamage(ship1, j, intersection[1][0]);
+					var state2 = identifyDamage(ship2, k, intersection[1][1]);
+					states.push([state1,state2]);
+				}
+			}
+		}
+		
+		if (states.length) {
+			var priority = ["",""];
+			for (var s=0; s<states.length; s++) {
+				if (priority[0] !== "dead") {
+					priority[0] = states[s][0];
+				}
+				if (priority[1] !== "dead") {
+					priority[1] = states[s][1];
+				}
+			}
+			
+			if (priority[0] === "dead" && priority[1] !== "dead") {
+				priority[0] = "";
+			} else if (priority[1] === "dead" && priority[0] !== "dead") {
+				priority[1] = "";
+			}
+			
+			console.log(priority[0]+","+priority[1]);
+			
+			var debrisType;
+			switch (priority[0]) {
+				case "dead":
+					ship1.alive = false;
+					break;
+				case "left wing":
+					shipDebris(ship1,"damage right");
+					break;
+				case "right wing":
+					shipDebris(ship1,"damage left");
+					break;
+				case "nose only":
+					debrisType = "damage "+ship1.shape;
+					debrisType = debrisType.substr(0,debrisType.length-5);
+					shipDebris(ship1,debrisType);
+					break;
+			}
+			switch (priority[1]) {
+				case "dead":
+					ship2.alive = false;
+					break;
+				case "left wing":
+					shipDebris(ship2,"damage right");
+					break;
+				case "right wing":
+					shipDebris(ship2,"damage left");
+					break;
+				case "nose only":
+					debrisType = "damage "+ship2.shape;
+					debrisType = debrisType.substr(0,debrisType.length-5);
+					shipDebris(ship2,debrisType);
+					break;
+			}
+			
+			if (priority[0] !== "" && priority[0] !== ship1.shape) {
+				ship1.shape = priority[0];
+				ship1.updateShape = true;
+			}
+			if (priority[1] !== "" && priority[1] !== ship2.shape) {
+				ship2.shape = priority[1];
+				ship2.updateShape = true;
+			}
+			
+			return;
+		}
+	}
 }
 
 function getShipCoords(ship) {
@@ -631,8 +734,6 @@ function checkMissileCollision(m, obj) {
 					switch (state) {
 						case "dead":
 							ship.alive = false;
-							debrisType = "kill "+ship.shape;
-							debrisType = debrisType.substr(0,debrisType.length-5);
 							break;
 						case "left wing":
 							shipDebris(ship,"damage right");
