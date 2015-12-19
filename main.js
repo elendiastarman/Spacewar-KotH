@@ -320,9 +320,11 @@ function updateGraphics(team){
 	field.selectAll(".flame").data(teams)
 		.attr("transform",function(ship){return "translate("+(ship.flame && ship.alive ? ship.x : -200)+","+(ship.flame && ship.alive ? ship.y : -200)+"),rotate("+ship.rot+")";})
 		.attr("points",function(ship){
-			var pointsStr = "";
-			engineFlame[ship.shape][0+(ship.flame>1)].forEach(function(P){ pointsStr += P[0]+","+P[1]+" "; });
-			return pointsStr;
+			if (ship.shape !== "nose only") {
+				var pointsStr = "";
+				engineFlame[ship.shape][0+(ship.flame>1)].forEach(function(P){ pointsStr += P[0]+","+P[1]+" "; });
+				return pointsStr;
+			}
 		});
 	
 	teams.forEach(function(ship){
@@ -518,6 +520,10 @@ function checkShipSunCollision(ship, checkOnly) {
 	}
 	
 	if (checkOnly) {return false;}
+}
+
+function checkShipShipCollision(ship1, ship2) {
+	
 }
 
 function getShipCoords(ship) {
