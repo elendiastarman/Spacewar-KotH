@@ -615,11 +615,11 @@ function checkShipShipCollision(ship1, ship2) {
 					break;
 			}
 			
-			if (priority[0] !== "" && priority[0] !== ship1.shape) {
+			if (priority[0] !== "" && priority[0] !== "dead" && priority[0] !== ship1.shape) {
 				ship1.shape = priority[0];
 				ship1.updateShape = true;
 			}
-			if (priority[1] !== "" && priority[1] !== ship2.shape) {
+			if (priority[1] !== "" && priority[1] !== "dead" && priority[1] !== ship2.shape) {
 				ship2.shape = priority[1];
 				ship2.updateShape = true;
 			}
