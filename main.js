@@ -982,7 +982,9 @@ function checkKeys() {
 					teamMove("red","turn right");
 					break;
 				case 67:
-					teamMove("red","hyperspace");
+					if (window["red"].shape !== "nose only") {
+						teamMove("red","hyperspace");
+					}
 					break;
 				case 86:
 					if (window["red"].shape !== "nose only") {
@@ -1006,7 +1008,9 @@ function checkKeys() {
 					teamMove("blue","turn right");
 					break;
 				case 188:
-					teamMove("blue","hyperspace");
+					if (window["blue"].shape !== "nose only") {
+						teamMove("blue","hyperspace");
+					}
 					break;
 				case 190:
 					if (window["blue"].shape !== "nose only") {
