@@ -20,36 +20,35 @@ var renderLoop;
 	});
 })(jQuery);
 
+var redPlayer = "human";
+var bluePlayer = "human";
+
 function init() {
 	initGame();
 }
 
 function update() {
 	//pollBots();
-	var uniqueActions = [];
+	var uniqueActions = [""];
 	
 	var redActions = human_getActions("red");
-	if (redActions.length) {
-		if (redActions.indexOf("hyperspace") > -1) {
-			teamMove("red","hyperspace");
-		} else {
-			for (var i=0; i<redActions.length; i++) {
-				if (redActions.indexOf(redActions[i]) == i) { uniqueActions.push(redActions[i]) }
-			}
-			teamMove("red",uniqueActions);
+	if (redActions.indexOf("hyperspace") > -1) {
+		teamMove("red","hyperspace");
+	} else {
+		for (var i=0; i<redActions.length; i++) {
+			if (redActions.indexOf(redActions[i]) == i) { uniqueActions.push(redActions[i]) }
 		}
+		teamMove("red",uniqueActions);
 	}
 	
 	var blueActions = human_getActions("blue");
-	if (blueActions.length) {
-		if (blueActions.indexOf("hyperspace") > -1) {
-			teamMove("blue","hyperspace");
-		} else {
-			for (var i=0; i<blueActions.length; i++) {
-				if (blueActions.indexOf(blueActions[i]) == i) { uniqueActions.push(blueActions[i]) }
-			}
-			teamMove("blue",uniqueActions);
+	if (blueActions.indexOf("hyperspace") > -1) {
+		teamMove("blue","hyperspace");
+	} else {
+		for (var i=0; i<blueActions.length; i++) {
+			if (blueActions.indexOf(blueActions[i]) == i) { uniqueActions.push(blueActions[i]) }
 		}
+		teamMove("blue",uniqueActions);
 	}
 	
 	updateGame();
@@ -78,9 +77,9 @@ function handleInput(event) {
 	if (event.type == 'keyup')  {
 		keystates[event.which] = false;
 		
-		if (event.which == 66) {
+		if (event.which == 66 && redPlayer === "human") {
 			window["red"].missileReady = true;
-		} else if (event.which == 191) {
+		} else if (event.which == 191 && bluePlayer === "human") {
 			window["blue"].missileReady = true;
 		}
 	}
