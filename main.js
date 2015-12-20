@@ -30,7 +30,6 @@ function init() {
 function update() {
 	//pollBots();
 	var uniqueActions = [""];
-	
 	var redActions = human_getActions("red");
 	if (redActions.indexOf("hyperspace") > -1) {
 		teamMove("red","hyperspace");
@@ -41,6 +40,7 @@ function update() {
 		teamMove("red",uniqueActions);
 	}
 	
+	var uniqueActions = [""];
 	var blueActions = human_getActions("blue");
 	if (blueActions.indexOf("hyperspace") > -1) {
 		teamMove("blue","hyperspace");
