@@ -32,24 +32,24 @@ function update() {
 	var uniqueActions = [""];
 	var redActions = human_getActions("red");
 	if (redActions.indexOf("hyperspace") > -1) {
-		teamMove("red","hyperspace");
+		uniqueActions.push("hyperspace");
 	} else {
 		for (var i=0; i<redActions.length; i++) {
 			if (redActions.indexOf(redActions[i]) == i) { uniqueActions.push(redActions[i]) }
 		}
-		teamMove("red",uniqueActions);
 	}
+	teamMove("red",uniqueActions);
 	
 	var uniqueActions = [""];
 	var blueActions = human_getActions("blue");
 	if (blueActions.indexOf("hyperspace") > -1) {
-		teamMove("blue","hyperspace");
+		uniqueActions.push("hyperspace");
 	} else {
 		for (var i=0; i<blueActions.length; i++) {
 			if (blueActions.indexOf(blueActions[i]) == i) { uniqueActions.push(blueActions[i]) }
 		}
-		teamMove("blue",uniqueActions);
 	}
+	teamMove("blue",uniqueActions);
 	
 	updateGame();
 }
