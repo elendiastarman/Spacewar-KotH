@@ -51,7 +51,9 @@ function update() {
 	}
 	teamMove("blue",uniqueActions);
 	
-	updateGame();
+	if (updateGame()) {
+		// do whatever is done upon finishing a game
+	}
 }
 
 var keystates = {};

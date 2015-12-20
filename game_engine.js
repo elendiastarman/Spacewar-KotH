@@ -158,13 +158,14 @@ function setupGame(start) {
 			field.selectAll('.missileHit'+ship.color).remove();
 		});
 	}
-	updateGraphics();
+	updateGraphics(0);
 }
 
 function updateGame() {
 	if (new Date() - startTime > gameDuration*1000) {
 		timeLeft.text = "GAME OVER";
-		updateGraphics();
+		updatePositions(1);
+		updateGraphics(1);
 		return 1;
 	} else if (restartTime && new Date() - restartTime > 3000) {
 		setupGame(0);
@@ -192,12 +193,19 @@ function updateGame() {
 		dots.exit().remove();
 	}
 	
-	updatePositions();
-	updateGraphics();
+	updatePositions(0);
+	updateGraphics(0);
 	return 0;
 }
 
-function updatePositions(){
+function updatePositions(debrisOnly) {
+	debris.forEach(function(fragment){
+		fragment.x += fragment.xv;
+		fragment.y += fragment.yv;
+		fragment.rot += fragment.rotVel;
+	});
+	if (debrisOnly) { return; }
+	
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(ship){
@@ -284,17 +292,26 @@ function updatePositions(){
 			ship.yv = 0;
 		}
 	});
-	
-	debris.forEach(function(fragment){
-		fragment.x += fragment.xv;
-		fragment.y += fragment.yv;
-		fragment.rot += fragment.rotVel;
-	});
 }
 
-function updateGraphics(team){
+function updateGraphics(debrisOnly) {
 	d3.selectAll('.text').data(textInfo)
 		.text(function(d){ return d.getText(); });
+	
+	var filteredDebris = [];
+	var now = new Date();
+	for (var i=0; i<debris.length; i++) {
+		if (now < debris[i].time) { filteredDebris.push(debris[i]); }
+	}
+	debris = filteredDebris;
+	
+	field.selectAll('.debris').data(debris)
+		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
+		.attr("points",function(d){ return d.pointsStr; })
+		.style("fill",function(d){ return d.color; });
+	field.selectAll('.debris').data(debris).exit().remove();
+	
+	if (debrisOnly) { return; }
 	
 	field.selectAll(".ship").data(teams)
 		.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
@@ -367,19 +384,6 @@ function updateGraphics(team){
 			}
 		}
 	});
-	
-	var filteredDebris = [];
-	var now = new Date();
-	for (var i=0; i<debris.length; i++) {
-		if (now < debris[i].time) { filteredDebris.push(debris[i]); }
-	}
-	debris = filteredDebris;
-	
-	field.selectAll('.debris').data(debris)
-		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
-		.attr("points",function(d){ return d.pointsStr; })
-		.style("fill",function(d){ return d.color; });
-	field.selectAll('.debris').data(debris).exit().remove();
 }
 
 function teamMove(team,actions) {
