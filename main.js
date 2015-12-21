@@ -21,7 +21,7 @@ var renderLoop;
 })(jQuery);
 
 var redPlayer = "human";
-var bluePlayer = "human";
+var bluePlayer = "RighthandedSpasms";
 var redVars = {};
 var blueVars = {};
 var theGame;
@@ -100,12 +100,12 @@ function human_setup(team) {
 	return {'keys':keysOfInterest[team], 'choices':choices};
 }
 
-function human_getActions(game,vars) {
+function human_getActions(gameInfo,botVars) {
 	var actions = [];
 	
 	for (var i=0; i<5; i++) {
-		var key = vars.keys[i];
-		if (keystates[key]) { actions.push(vars.choices[i]) }
+		var key = botVars.keys[i];
+		if (keystates[key]) { actions.push(botVars.choices[i]) }
 	}
 	
 	return actions;

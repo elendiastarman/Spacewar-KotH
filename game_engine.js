@@ -211,6 +211,9 @@ function updateGame() {
 		dots.exit().remove();
 	}
 	
+	if (redPlayer !== "human" && new Date() - red.fireTime > fireRateLimit) { red.missileReady = true; }
+	if (bluePlayer !== "human" && new Date() - blue.fireTime > fireRateLimit) { blue.missileReady = true; }
+	
 	updatePositions(0);
 	updateGraphics(0);
 	
