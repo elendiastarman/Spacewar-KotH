@@ -6,8 +6,11 @@ var renderLoop;
 		console.log("main.js");
 		init();
 		renderLoop = setInterval(update, 30);
-		$(document).keydown(handleInput);
-		$(document).keyup(handleInput);
+		$('#playfield').focus();
+		$('#playfield').bind("keydown",handleInput);
+		$('#playfield').bind("keyup",handleInput);
+		// $('#playfield').keydown(handleInput);
+		// $('#playfield').keyup(handleInput);
 		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*5000; });
 		$('#showIntersections').on('change', function(){
 			showIntersections = !showIntersections;
@@ -77,6 +80,10 @@ function update() {
 
 var keystates = {};
 function handleInput(event) {
+	// console.log(event.target);
+	// console.log(event.target.id);
+	if (event.target.id !== 'playfield') { return; }
+	
 	// console.log(event.which);
 	if (event.which == 27){ //ESC key, stops animation
 		clearInterval(renderLoop);
