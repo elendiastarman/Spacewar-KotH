@@ -1,5 +1,5 @@
 # Ignore everything but js files
 *
 
-!.gitignore
+#!.gitignore
 !*.js
