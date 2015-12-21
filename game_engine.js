@@ -291,16 +291,9 @@ function updatePositions(debrisOnly) {
 			m.yv = 1.414*maxSpeed*m.yv/Math.sqrt(speed);
 		}
 		
-		m.nx = m.x + m.xv;
-		m.ny = m.y + m.yv;
 		checkMissileCollision(m, "sun");
 		checkMissileCollision(m, "red");
 		checkMissileCollision(m, "blue");
-		
-		if (m.live) {
-			m.x = (m.nx+fieldWidth)%fieldWidth;
-			m.y = (m.ny+fieldHeight)%fieldHeight;
-		}
 	});
 	
 	teams.forEach(function(ship){
@@ -329,6 +322,13 @@ function updatePositions(debrisOnly) {
 			ship.y = -200;
 			ship.xv = 0;
 			ship.yv = 0;
+		}
+	});
+	
+	missiles.forEach(function(m){
+		if (m.live) {
+			m.x = (m.x+m.xv+fieldWidth)%fieldWidth;
+			m.y = (m.y+m.yv+fieldHeight)%fieldHeight;
 		}
 	});
 }
@@ -708,7 +708,7 @@ function fireMissile(ship) {
 function checkMissileCollision(m, obj) {
 	if (obj === "sun") {
 		var points = sun.points;
-		var L1 = [[m.x,m.y],[m.nx,m.ny]];
+		var L1 = [[m.x,m.y],[m.x+m.xv,m.y+m.yv]];
 		var len = points.length;
 		
 		for (var i=0; i<len; i++) {
