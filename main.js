@@ -21,7 +21,8 @@ var renderLoop;
 })(jQuery);
 
 var redPlayer = "human";
-var bluePlayer = "RighthandedSpasms";
+// var bluePlayer = "RighthandedSpasms";
+var bluePlayer = "userbot";
 var redVars = {};
 var blueVars = {};
 var theGame;
@@ -29,11 +30,14 @@ var theGame;
 function init() {
 	theGame = initGame();
 	
+	setUserBotCode();
+	
 	redVars = window[redPlayer+"_setup"]("red");
-	blueVars = window[redPlayer+"_setup"]("blue");
+	blueVars = window[bluePlayer+"_setup"]("blue");
 }
 
 function update() {
+	if (gameOver) { return; }
 	//pollBots();
 	var uniqueRedActions = [""];
 	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
@@ -120,6 +124,11 @@ function human_getActions(gameInfo,botVars) {
 	return actions;
 }
 
+
+function setUserBotCode() {
+	window["userbot_setup"] = new Function("team", "var botVars = {};\n"+jQuery("#userbot-setup").val()+"\n\nreturn botVars;");
+	window["userbot_getActions"] = new Function("gameInfo", "botVars", "var actions = [];\n"+jQuery("#userbot-getactions").val()+"\nreturn actions;");
+}
 
 // var keysOfInterest = [90,88,67,86,66,  78,77,188,190,191];
 // function checkKeys() {
