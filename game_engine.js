@@ -1,5 +1,6 @@
 var SCALE = 1.0;
 var gameOver = 0;
+var gameInfo = {};
 
 window["red"] = {"color":"red"};
 window["blue"] = {"color":"blue"};
@@ -20,6 +21,8 @@ var engineFlame = {
 var field;
 var fieldWidth = 800;
 var fieldHeight = 600;
+gameInfo.fieldWidth = fieldWidth;
+gameInfo.fieldHeight = fieldHeight;
 
 window["sun"] = {"cx":fieldWidth/2, "cy":fieldHeight/2, "r":5, "points":[]}
 for (var i=0; i<8; i++) {
@@ -34,10 +37,12 @@ var fireRateLimit = 100;
 var missileMax = 20;
 
 var gravityStrength = 1*5000;
-
 var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.30;
+["gravityStrength","speedLimit","maxSpeed","engineThrust"].forEach(function(attr){
+	gameInfo[attr] = window[attr];
+});
 
 var hyperDuration = 1000;
 var deathDuration = 1000;
@@ -89,6 +94,9 @@ function initGame() {
 		.attr("class","text")
 		.attr("text-anchor",function(d){ return d.align || "middle";})
 		.text(function(d){ return d.getText(); });
+	gameInfo.redScore = 0;
+	gameInfo.blueScore = 0;
+	gameInfo.timeLeft = gameDuration;
 	
 	field.append("circle") //sun
 		.attr("cx",sun.cx)
@@ -96,6 +104,9 @@ function initGame() {
 		.attr("r", sun.r*SCALE)
 		.style("fill","white")
 		.attr("id","sun");
+	gameInfo.sun_x = sun.cx;
+	gameInfo.sun_y = sun.cy;
+	gameInfo.sun_r = sun.r*SCALE;
 	
 	field.selectAll(".ship").data(teams).enter().append("polygon")
 		.attr("id", function(d){return d.color;})
@@ -108,6 +119,7 @@ function initGame() {
 		.attr("class", "flame");
 	
 	setupGame(1);
+	return gameInfo;
 }
 
 function setupGame(start) {
@@ -147,9 +159,11 @@ function setupGame(start) {
 		ship.exploded = false;
 		ship.alive = true;
 		
-		ship.flame = 0;
-		
 		field.select("#"+ship.color).style("fill",ship.color);
+		
+		["x","y","rot","xv","yv","shape","missileStock","exploded","alive"].forEach(function(attr){
+			gameInfo[ship.color+"_"+attr] = ship[attr];
+		});
 	});
 	
 	missiles = [];
@@ -199,6 +213,24 @@ function updateGame() {
 	
 	updatePositions(0);
 	updateGraphics(0);
+	
+	teams.forEach(function(ship){
+		["x","y","rot","xv","yv","shape","missileStock","exploded","alive"].forEach(function(attr){
+			gameInfo[ship.color+"_"+attr] = ship[attr];
+		});
+		gameInfo[ship.color+"_inHyperspace"] = ship.hyperTime ? true : false;
+	});
+	
+	gameInfo.missiles = [];
+	missiles.forEach(function(m){
+		gameInfo.missiles.push({"x":m.x,"y":m.y,"xv":m.xv,"yv":m.yv,});
+	});
+	gameInfo.numMissiles = missiles.length;
+	
+	gameInfo.redScore = red.score;
+	gameInfo.blueScore = blue.score;
+	gameInfo.timeLeft = Math.floor(gameDuration - (new Date() - startTime));
+	
 	return 0;
 }
 
@@ -484,7 +516,7 @@ function checkShipSunCollision(ship, checkOnly) {
 				var ty2 = tPoints[k2][1];
 				var L2 = [[tx1,ty1],[tx2,ty2]];
 				
-				var intersection = lineIntersection(L1,L2);
+				var intersection = LineIntersection(L1,L2);
 				if (intersection.length) {
 					if (checkOnly) {return true;}
 					
@@ -555,7 +587,7 @@ function checkShipShipCollision(ship1, ship2) {
 				var ty2 = tPoints[k2][1] + f*ship2.yv;
 				var L2 = [[tx1,ty1],[tx2,ty2]];
 				
-				var intersection = lineIntersection(L1,L2);
+				var intersection = LineIntersection(L1,L2);
 				if (intersection.length) {
 					var state1 = identifyDamage(ship1, j, intersection[1][0]);
 					var state2 = identifyDamage(ship2, k, intersection[1][1]);
@@ -630,6 +662,8 @@ function checkShipShipCollision(ship1, ship2) {
 }
 
 function getShipCoords(ship) {
+	if (typeof(ship) === "string") { ship = window[ship]; }
+	
 	var sPoints = shipShapes[ship.shape];
 	var tPoints = [];
 	
@@ -676,7 +710,7 @@ function checkMissileCollision(m, obj) {
 		
 		for (var i=0; i<len; i++) {
 			var L2 = [[points[i][0],points[i][1]], [points[(i+1)%len][0],points[(i+1)%len][1]]];
-			var intersection = lineIntersection(L1, L2);
+			var intersection = LineIntersection(L1, L2);
 			
 			if (intersection.length) { m.live = false; }
 		}
@@ -704,7 +738,7 @@ function checkMissileCollision(m, obj) {
 				var sx2 = sPoints[j2][0] + f*ship.xv;
 				var sy2 = sPoints[j2][1] + f*ship.yv;
 				var L2 = [[sx1,sy1],[sx2,sy2]];
-				var intersection = lineIntersection(L1, L2);
+				var intersection = LineIntersection(L1, L2);
 				
 				if (intersection.length) {
 					if (!closestIntersection.length || (intersection[1][0] < closestIntersection[1][0])) {
@@ -834,7 +868,7 @@ function identifyDamage(ship,which,where) {
 	return state;
 }
 
-function lineIntersection(L1, L2) {
+function LineIntersection(L1, L2) {
 	// from http://stackoverflow.com/a/565282/1473772
 	var p = L1[0];
 	var r = [L1[1][0]-L1[0][0], L1[1][1]-L1[0][1]];

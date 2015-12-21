@@ -22,15 +22,21 @@ var renderLoop;
 
 var redPlayer = "human";
 var bluePlayer = "human";
+var redVars = {};
+var blueVars = {};
+var theGame;
 
 function init() {
-	initGame();
+	theGame = initGame();
+	
+	redVars = window[redPlayer+"_setup"]("red");
+	blueVars = window[redPlayer+"_setup"]("blue");
 }
 
 function update() {
 	//pollBots();
 	var uniqueActions = [""];
-	var redActions = human_getActions("red");
+	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
 	if (redActions.indexOf("hyperspace") > -1) {
 		uniqueActions.push("hyperspace");
 	} else {
@@ -41,7 +47,7 @@ function update() {
 	teamMove("red",uniqueActions);
 	
 	var uniqueActions = [""];
-	var blueActions = human_getActions("blue");
+	var blueActions = window[bluePlayer+"_getActions"](theGame,blueVars);
 	if (blueActions.indexOf("hyperspace") > -1) {
 		uniqueActions.push("hyperspace");
 	} else {
@@ -88,15 +94,18 @@ function handleInput(event) {
 }
 
 
-
-function human_getActions(team) {
-	var actions = [];
+function human_setup(team) {
 	var keysOfInterest = {"red":[90,88,67,86,66], "blue":[78,77,188,190,191]};
 	var choices = ["turn left","turn right","hyperspace","fire engine","fire missile"];
+	return {'keys':keysOfInterest[team], 'choices':choices};
+}
+
+function human_getActions(game,vars) {
+	var actions = [];
 	
 	for (var i=0; i<5; i++) {
-		var key = keysOfInterest[team][i];
-		if (keystates[key]) { actions.push(choices[i]) }
+		var key = vars.keys[i];
+		if (keystates[key]) { actions.push(vars.choices[i]) }
 	}
 	
 	return actions;
