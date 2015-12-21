@@ -35,27 +35,36 @@ function init() {
 
 function update() {
 	//pollBots();
-	var uniqueActions = [""];
+	var uniqueRedActions = [""];
 	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
 	if (redActions.indexOf("hyperspace") > -1) {
-		uniqueActions.push("hyperspace");
+		uniqueRedActions.push("hyperspace");
 	} else {
 		for (var i=0; i<redActions.length; i++) {
-			if (redActions.indexOf(redActions[i]) == i) { uniqueActions.push(redActions[i]) }
+			if (redActions.indexOf(redActions[i]) == i) { uniqueRedActions.push(redActions[i]) }
 		}
 	}
-	teamMove("red",uniqueActions);
+	teamMove("red",uniqueRedActions);
 	
-	var uniqueActions = [""];
+	var uniqueBlueActions = [""];
 	var blueActions = window[bluePlayer+"_getActions"](theGame,blueVars);
 	if (blueActions.indexOf("hyperspace") > -1) {
-		uniqueActions.push("hyperspace");
+		uniqueBlueActions.push("hyperspace");
 	} else {
 		for (var i=0; i<blueActions.length; i++) {
-			if (blueActions.indexOf(blueActions[i]) == i) { uniqueActions.push(blueActions[i]) }
+			if (blueActions.indexOf(blueActions[i]) == i) { uniqueBlueActions.push(blueActions[i]) }
 		}
 	}
-	teamMove("blue",uniqueActions);
+	teamMove("blue",uniqueBlueActions);
+	
+	jQuery('#action-table').find("td").each(function(i,elem){ jQuery(elem).removeClass("redAction blueAction") });
+	
+	uniqueRedActions.forEach(function(action){
+		jQuery("#red-"+action.replace(" ","-")).addClass("redAction");
+	});
+	uniqueBlueActions.forEach(function(action){
+		jQuery("#blue-"+action.replace(" ","-")).addClass("blueAction");
+	});
 	
 	if (updateGame()) {
 		// do whatever is done upon finishing a game
