@@ -1,4 +1,5 @@
 var SCALE = 1.0;
+var gameOver = 0;
 
 window["red"] = {"color":"red"};
 window["blue"] = {"color":"blue"};
@@ -111,6 +112,8 @@ function initGame() {
 
 function setupGame(start) {
 	if (start) {
+		gameOver = 0;
+		
 		startTime = new Date();
 		teams.forEach(function(ship){
 			ship.score = 0;
@@ -164,6 +167,7 @@ function setupGame(start) {
 function updateGame() {
 	if (new Date() - startTime > gameDuration*1000) {
 		timeLeft.text = "GAME OVER";
+		gameOver = 1;
 		updatePositions(1);
 		updateGraphics(1);
 		return 1;
@@ -387,6 +391,8 @@ function updateGraphics(debrisOnly) {
 }
 
 function teamMove(team,actions) {
+	if (gameOver) { return; }
+	
 	var ship = window[team];
 	var engineFired = 0;
 	
