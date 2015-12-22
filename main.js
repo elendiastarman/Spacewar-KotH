@@ -1,6 +1,7 @@
 "use strict";
 
 var renderLoop;
+var players = ["","human","userbot"];
 (function($){
 	$(document).ready(function (){
 		console.log("main.js");
@@ -9,8 +10,6 @@ var renderLoop;
 		$('#playfield').focus();
 		$('#playfield').bind("keydown",handleInput);
 		$('#playfield').bind("keyup",handleInput);
-		// $('#playfield').keydown(handleInput);
-		// $('#playfield').keyup(handleInput);
 		$('#gravityCheck').on('change', function(){ gravityStrength = this.checked*5000; });
 		$('#showIntersections').on('change', function(){
 			showIntersections = !showIntersections;
@@ -30,6 +29,24 @@ var redVars = {};
 var blueVars = {};
 var theGame;
 
+var vs = 20;
+var hs = 25;
+var charw = 8;
+var charh = 12;
+var maxlen = 20;
+function horizLineCoords(k) {
+	var y = k*vs;
+	var q = charw*maxlen;
+	var coords = "0,"+(q+y)+" "+(q+(players.length-1)*hs)+","+(q+y);
+	return coords;
+}
+function vertLineCoords(k) {
+	var x = k*hs;
+	var q = charw*maxlen;
+	var coords = ""+(1.5*q+x)+",0 "+(q+x)+","+(q)+" "+(q+x)+","+(q+(players.length-1)*vs);
+	return coords;
+}
+
 function init() {
 	theGame = initGame();
 	
@@ -37,6 +54,49 @@ function init() {
 	
 	redVars = window[redPlayer+"_setup"]("red");
 	blueVars = window[bluePlayer+"_setup"]("blue");
+	
+	var scriptNames = eval(jQuery("#script-names").text());
+	for (var i=0; i<scriptNames.length; i++) {
+		var sn = scriptNames[i].substring(9); //takes out "Spacewar/"
+		if (sn.substr(0,4) === "bot_") {
+			console.log(scriptNames[i]);
+			console.log(sn);
+			console.log(sn.substring(4,sn.length-3));
+			players.push(sn.substring(4,sn.length-3));
+		}
+	}
+	
+	var selectGrid = d3.select('svg').append("g")
+		.attr("id","selectGrid");
+	d3.select("#field").attr("height",fieldHeight+charw*maxlen + players.length*vs + 2);
+		
+	var lines = selectGrid.append("g")
+		.attr("fill","none")
+		.attr("stroke","black")
+		.attr("stroke-width","2px");
+	
+	for (var j=0; j<players.length; j++) {
+		
+		lines.append("polyline")
+			.attr("points", horizLineCoords(j));
+		lines.append("polyline")
+			.attr("points", vertLineCoords(j));
+		
+		selectGrid.append("text")
+			.attr("text-anchor","end")
+			.attr("x",charw*maxlen - charw/2)
+			.attr("y",charw*maxlen + j*vs - charh/2+1)
+			.text(players[j]);
+		selectGrid.append("text")
+			.attr("text-anchor","start")
+			.attr("x",charw*maxlen + j*hs - hs/2)
+			.attr("y",charw*maxlen)
+			.attr("transform","rotate(-63.435 "+(charw*maxlen+j*hs-hs/2)+","+(charw*maxlen-vs/2)+")")
+			.text(players[j]);
+	}
+	
+	selectGrid.attr("transform","translate(20,"+(fieldHeight+20)+")");
+	
 }
 
 function update() {
