@@ -1,7 +1,7 @@
 "use strict";
 
 var renderLoop;
-var players = ["","human","userbot"];
+var players = ["human","userbot"];
 (function($){
 	$(document).ready(function (){
 		console.log("main.js");
@@ -23,7 +23,6 @@ var players = ["","human","userbot"];
 })(jQuery);
 
 var redPlayer = "human";
-// var bluePlayer = "RighthandedSpasms";
 var bluePlayer = "userbot";
 var redVars = {};
 var blueVars = {};
@@ -34,17 +33,55 @@ var hs = 25;
 var charw = 8;
 var charh = 12;
 var maxlen = 20;
+var q = charw*maxlen;
+
 function horizLineCoords(k) {
 	var y = k*vs;
-	var q = charw*maxlen;
-	var coords = "0,"+(q+y)+" "+(q+(players.length-1)*hs)+","+(q+y);
+	var coords = "0,"+(q+y)+" "+(q+players.length*hs)+","+(q+y);
 	return coords;
 }
 function vertLineCoords(k) {
 	var x = k*hs;
-	var q = charw*maxlen;
-	var coords = ""+(1.5*q+x)+",0 "+(q+x)+","+(q)+" "+(q+x)+","+(q+(players.length-1)*vs);
+	var coords = ""+(1.5*q+x)+",0 "+(q+x)+","+(q)+" "+(q+x)+","+(q+players.length*vs);
 	return coords;
+}
+function redSelectCoords(k) {
+	var y = k*vs;
+	return ""+0+","+(q+y)+" "+(q)+","+(q+y)+" "+(q)+","+(q+y+vs)+" "+0+","+(q+y+vs);
+}
+function blueSelectCoords(k) {
+	var x = k*hs;
+	return ""+(1.5*q+x)+","+0+" "+(1.5*q+x+hs)+","+0+" "+(q+x+hs)+","+(q)+" "+(q+x)+","+(q);
+}
+function bothSelectCoords(k,k2) {
+	var x = k2*hs;
+	var y = k*vs;
+	return ""+(q+x)+","+(q+y)+" "+(q+x+hs)+","+(q+y)+" "+(q+x+hs)+","+(q+y+vs)+" "+(q+x)+","+(q+y+vs);
+}
+
+function playerSet(a,b) {
+	return function() {
+		if (a+1){ redPlayer = players[a]; }
+		if (b+1){ bluePlayer = players[b]; }
+		updateHighlights();
+		
+		redVars = window[redPlayer+"_setup"]("red");
+		blueVars = window[bluePlayer+"_setup"]("blue");
+		
+		setupGame(1);
+	}
+}
+
+function updateHighlights() {
+	console.log("Players: "+redPlayer+", "+bluePlayer)
+	d3.select('#selectGridBoxes').selectAll('polygon').attr("fill","white");
+	d3.select('#selectGrid').selectAll('text').attr("fill","black");
+	
+	d3.select('#redName-'+redPlayer).attr("fill","white");
+	d3.select('#blueName-'+bluePlayer).attr("fill","white");
+	d3.select('#redBox-'+redPlayer).attr("fill","red");
+	d3.select('#blueBox-'+bluePlayer).attr("fill","blue");
+	d3.select('#bothBox-'+redPlayer+'-'+bluePlayer).attr("fill","yellow");
 }
 
 function init() {
@@ -59,43 +96,70 @@ function init() {
 	for (var i=0; i<scriptNames.length; i++) {
 		var sn = scriptNames[i].substring(9); //takes out "Spacewar/"
 		if (sn.substr(0,4) === "bot_") {
-			console.log(scriptNames[i]);
-			console.log(sn);
-			console.log(sn.substring(4,sn.length-3));
 			players.push(sn.substring(4,sn.length-3));
 		}
 	}
 	
 	var selectGrid = d3.select('svg').append("g")
 		.attr("id","selectGrid");
-	d3.select("#field").attr("height",fieldHeight+charw*maxlen + players.length*vs + 2);
-		
-	var lines = selectGrid.append("g")
+	var selectGridBoxes = selectGrid.append("g")
+		.attr("id","selectGridBoxes")
+		.attr("fill","white");
+	var selectGridLines = selectGrid.append("g")
+		.attr("id","selectGridLines")
 		.attr("fill","none")
 		.attr("stroke","black")
-		.attr("stroke-width","2px");
+		.attr("stroke-width","2px");;
+	d3.select("#field").attr("height",fieldHeight+charw*maxlen + (players.length+1)*vs + 2);
 	
+	selectGridLines.append("polyline")
+		.attr("points", horizLineCoords(0));
+	selectGridLines.append("polyline")
+		.attr("points", vertLineCoords(0));
+		
 	for (var j=0; j<players.length; j++) {
 		
-		lines.append("polyline")
-			.attr("points", horizLineCoords(j));
-		lines.append("polyline")
-			.attr("points", vertLineCoords(j));
+		selectGridLines.append("polyline")
+			.attr("points", horizLineCoords(j+1));
+		selectGridLines.append("polyline")
+			.attr("points", vertLineCoords(j+1));
 		
 		selectGrid.append("text")
 			.attr("text-anchor","end")
 			.attr("x",charw*maxlen - charw/2)
-			.attr("y",charw*maxlen + j*vs - charh/2+1)
+			.attr("y",charw*maxlen + (j+1)*vs - charh/2+1)
+			.attr("id","redName-"+players[j])
 			.text(players[j]);
 		selectGrid.append("text")
 			.attr("text-anchor","start")
-			.attr("x",charw*maxlen + j*hs - hs/2)
+			.attr("x",charw*maxlen + (j+1)*hs - hs/2)
 			.attr("y",charw*maxlen)
-			.attr("transform","rotate(-63.435 "+(charw*maxlen+j*hs-hs/2)+","+(charw*maxlen-vs/2)+")")
+			.attr("id","blueName-"+players[j])
+			.attr("transform","rotate(-63.435 "+(charw*maxlen+(j+1)*hs-hs/2)+","+(charw*maxlen-vs/2)+")")
 			.text(players[j]);
+
+		selectGridBoxes.append("polygon")
+			.attr("points", redSelectCoords(j))
+			// .attr("fill","red")
+			.attr("id","redBox-"+players[j])
+			.on("click", playerSet(j,-1));
+		selectGridBoxes.append("polygon")
+			.attr("points", blueSelectCoords(j))
+			// .attr("fill","blue")
+			.attr("id","blueBox-"+players[j])
+			.on("click", playerSet(-1,j));
+		
+		for (var j2=0; j2<players.length; j2++) {
+			selectGridBoxes.append("polygon")
+				.attr("points", bothSelectCoords(j,j2))
+				// .attr("fill","yellow")
+				.attr("id","bothBox-"+players[j]+"-"+players[j2])
+				.on("click", playerSet(j,j2));
+		}
 	}
 	
 	selectGrid.attr("transform","translate(20,"+(fieldHeight+20)+")");
+	updateHighlights();
 	
 }
 
@@ -140,8 +204,6 @@ function update() {
 
 var keystates = {};
 function handleInput(event) {
-	// console.log(event.target);
-	// console.log(event.target.id);
 	if (event.target.id !== 'playfield') { return; }
 	
 	// console.log(event.which);
@@ -196,55 +258,3 @@ function setUserBotCode() {
 	window["userbot_setup"] = new Function("team", "var botVars = {};\n"+jQuery("#userbot-setup").val()+"\n\nreturn botVars;");
 	window["userbot_getActions"] = new Function("gameInfo", "botVars", "var actions = [];\n"+jQuery("#userbot-getactions").val()+"\nreturn actions;");
 }
-
-// var keysOfInterest = [90,88,67,86,66,  78,77,188,190,191];
-// function checkKeys() {
-	// keysOfInterest.forEach(function(k){
-		// if (keystates[k]){
-			// switch (k){
-				// // RED
-				// case 90:
-					// teamMove("red","turn left");
-					// break;
-				// case 88:
-					// teamMove("red","turn right");
-					// break;
-				// case 67:
-					// teamMove("red","hyperspace");
-					// break;
-				// case 86:
-					// teamMove("red","fire engine");
-					// break;
-				// case 66:
-					// teamMove("red","fire missile");
-					// break;
-				
-				// // BLUE
-				// case 78:
-					// teamMove("blue","turn left");
-					// break;
-				// case 77:
-					// teamMove("blue","turn right");
-					// break;
-				// case 188:
-					// teamMove("blue","hyperspace");
-					// break;
-				// case 190:
-					// teamMove("blue","fire engine");
-					// break;
-				// case 191:
-					// teamMove("blue","fire missile");
-					// break;
-			// }
-		// } else {
-			// switch (k){
-				// case 86:
-					// window["red"].flame = 0;
-					// break;
-				// case 190:
-					// window["blue"].flame = 0;
-					// break;
-			// }
-		// }
-	// });
-// }
