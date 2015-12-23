@@ -129,6 +129,7 @@ function init() {
 			.attr("x",charw*maxlen - charw/2)
 			.attr("y",charw*maxlen + (j+1)*vs - charh/2+1)
 			.attr("id","redName-"+players[j])
+			.on("click", playerSet(j,-1))
 			.text(players[j]);
 		selectGrid.append("text")
 			.attr("text-anchor","start")
@@ -136,6 +137,7 @@ function init() {
 			.attr("y",charw*maxlen)
 			.attr("id","blueName-"+players[j])
 			.attr("transform","rotate(-63.435 "+(charw*maxlen+(j+1)*hs-hs/2)+","+(charw*maxlen-vs/2)+")")
+			.on("click", playerSet(-1,j))
 			.text(players[j]);
 
 		selectGridBoxes.append("polygon")
