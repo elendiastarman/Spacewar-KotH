@@ -100,8 +100,10 @@ function init() {
 		}
 	}
 	
-	var selectGrid = d3.select('svg').append("g")
-		.attr("id","selectGrid");
+	var selectGrid = d3.select('#playfield').append('svg')//d3.select('svg').append("g")
+		.attr("id","selectGrid")
+		.attr("width",q+(players.length+1)*hs*2)
+		.attr("height",q+(players.length+1)*vs);
 	var selectGridBoxes = selectGrid.append("g")
 		.attr("id","selectGridBoxes")
 		.attr("fill","white");
@@ -110,7 +112,7 @@ function init() {
 		.attr("fill","none")
 		.attr("stroke","black")
 		.attr("stroke-width","2px");;
-	d3.select("#field").attr("height",fieldHeight+charw*maxlen + (players.length+1)*vs + 2);
+	// d3.select("#field").attr("height",fieldHeight+charw*maxlen + (players.length+1)*vs + 2);
 	
 	selectGridLines.append("polyline")
 		.attr("points", horizLineCoords(0));
@@ -160,7 +162,7 @@ function init() {
 		}
 	}
 	
-	selectGrid.attr("transform","translate(20,"+(fieldHeight+20)+")");
+	// selectGrid.attr("transform","translate(20,"+(fieldHeight+20)+")");
 	updateHighlights();
 	
 }
