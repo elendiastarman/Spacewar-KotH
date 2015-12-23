@@ -268,6 +268,11 @@ function updatePositions(debrisOnly) {
 		
 			checkShipSunCollision(ship);
 			
+			if (ship.rot > 180) {
+				ship.rot -= 360;
+			} else if (ship.rot < -180) {
+				ship.rot += 360;
+			}
 		}
 	});
 	
