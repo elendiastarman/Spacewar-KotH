@@ -100,7 +100,8 @@ function init() {
 		}
 	}
 	
-	var selectGrid = d3.select('#playfield').append('svg')//d3.select('svg').append("g")
+	d3.select('#playfield').append('br');
+	var selectGrid = d3.select('#playfield').append('svg')
 		.attr("id","selectGrid")
 		.attr("width",q+(players.length+1)*hs*2)
 		.attr("height",q+(players.length+1)*vs);
@@ -111,8 +112,7 @@ function init() {
 		.attr("id","selectGridLines")
 		.attr("fill","none")
 		.attr("stroke","black")
-		.attr("stroke-width","2px");;
-	// d3.select("#field").attr("height",fieldHeight+charw*maxlen + (players.length+1)*vs + 2);
+		.attr("stroke-width","2px");
 	
 	selectGridLines.append("polyline")
 		.attr("points", horizLineCoords(0));
@@ -162,14 +162,13 @@ function init() {
 		}
 	}
 	
-	// selectGrid.attr("transform","translate(20,"+(fieldHeight+20)+")");
 	updateHighlights();
 	
 }
 
 function update() {
 	if (gameOver) { return; }
-	//pollBots();
+	
 	var uniqueRedActions = [""];
 	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
 	if (redActions.indexOf("hyperspace") > -1) {
