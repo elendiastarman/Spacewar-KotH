@@ -1,7 +1,6 @@
 "use strict";
 
 var renderLoop;
-var players = ["human","userbot"];
 (function($){
 	$(document).ready(function (){
 		console.log("main.js");
@@ -22,6 +21,7 @@ var players = ["human","userbot"];
 	});
 })(jQuery);
 
+var players = [];
 var redPlayer = "human";
 var bluePlayer = "userbot";
 var redVars = {};
@@ -99,6 +99,8 @@ function init() {
 			players.push(sn.substring(4,sn.length-3));
 		}
 	}
+	players.sort();
+	players = ["human","userbot"].concat(players);
 	
 	d3.select('#playfield').append('br');
 	var selectGrid = d3.select('#playfield').append('svg')
