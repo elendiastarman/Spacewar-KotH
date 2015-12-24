@@ -1,18 +1,23 @@
 function UhhIDKWhatToCallThisBot_setup(team) {
-	var botVars = {};
+var botVars = {};
+ botVars['t'] = 0;
+botVars["color"] = team;
+     return botVars;
 
-	botVars["color"] = team;
-    return botVars;
 }
 
 function UhhIDKWhatToCallThisBot_getActions(gameInfo, botVars) {
     var actions = [];
+    //when i need it: "turn left",
+    var WCID = [
+
+    "fire missile",
+    "turn right",
+    "fire engine"]
 
     if (gameInfo[botVars["color"]+"_alive"]) {
-        var d = Math.random();
-        if (d > 0.333 && d < 0.666) { actions.push("turn right") }
-        if (d > 0.666) { actions.push("fire engine") }
-        if (d < 0.333) { actions.push("fire missile") }
+        botVars['t']++;
+        actions.push(WCID[botVars['t']%(WCID.length)]);
     }
-    return actions;
+     return actions;
 }
