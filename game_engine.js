@@ -40,6 +40,8 @@ var gravityStrength = 1*5000;
 var speedLimit = 15; //engine propulsion
 var maxSpeed = 40; //gravity-boosted
 var engineThrust = 0.30;
+
+var overideHyperspace = null; // if you wish to disable hyperspace death, set this to 0.
 ["gravityStrength","speedLimit","maxSpeed","engineThrust"].forEach(function(attr){
 	gameInfo[attr] = window[attr];
 });
@@ -319,7 +321,7 @@ function updatePositions(debrisOnly) {
 			ship.y = Math.random()*(fieldHeight-100)+50;
 			ship.xv = 0;
 			ship.yv = 0;
-			var deathChance = ship.shape === "full ship" ? 0.25 : 0.5;
+			var deathChance = overideHyperspace==null?(ship.shape === "full ship" ? 0.25 : 0.5):overideHyperspace;
 			if (Math.random() < deathChance) { ship.alive = false; }
 			ship.hyperTime = false;
 		} else {
