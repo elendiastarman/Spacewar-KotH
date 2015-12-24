@@ -30,7 +30,7 @@ function SunAvoider_getActions(gameInfo, botVars) {
 			angDiff -= 360;
 		}
 		
-		if (angDiff > 0) {
+		if (angDiff >= 0) {
 			actions.push("turn left");
 		} else if (angDiff < 0) {
 			actions.push("turn right");
