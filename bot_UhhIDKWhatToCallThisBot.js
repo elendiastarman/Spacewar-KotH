@@ -9,8 +9,11 @@ botVars["color"] = team;
 function UhhIDKWhatToCallThisBot_getActions(gameInfo, botVars) {
     var actions = [];
     //when i need it: "turn left",
+    //Use missiles sparingly!
     var WCID = [
-
+    "fire engine",
+     "turn right",
+    "fire engine",
     "fire missile",
     "turn right",
     "fire engine"]
