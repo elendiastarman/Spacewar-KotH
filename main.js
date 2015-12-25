@@ -105,7 +105,7 @@ function init() {
 	d3.select('#playfield').append('br');
 	var selectGrid = d3.select('#playfield').append('svg')
 		.attr("id","selectGrid")
-		.attr("width",q+(players.length+1)*hs*2)
+		.attr("width",q+(players.length+3)*hs)
 		.attr("height",q+(players.length+1)*vs);
 	var selectGridBoxes = selectGrid.append("g")
 		.attr("id","selectGridBoxes")
@@ -165,7 +165,7 @@ function init() {
 	}
 	
 	updateHighlights();
-	
+
 }
 
 function update() {
