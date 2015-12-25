@@ -27,6 +27,7 @@ function Engineer_setup(t){
 }
 
 function Engineer_getActions(gameInfo,botVars){
+	var actions = [];
 	// are we too close to the sun or a missile?
 	if(botVars.hS(gameInfo)||botVars.hSm(gameInfo))actions.push("hyperspace");
 
@@ -37,4 +38,5 @@ function Engineer_getActions(gameInfo,botVars){
 	actions.push(botVars.lOr(gameInfo,botVars));
 
 	if(Math.random()<.7)actions.push("fire engine");
+	return actions;
 }
