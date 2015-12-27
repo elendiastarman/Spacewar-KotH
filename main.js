@@ -1,4 +1,6 @@
 "use strict";
+// load stuff
+function load(){if(location.hash){location.hash.slice(1).split("&").map(function(e){e=e.split("="),"setup"==e[0]&&(document.getElementById("userbot-setup").value=dec(e[1])),"action"==e[0]&&(document.getElementById("userbot-getactions").value=dec(e[1]))})}}function save(){var e=document.getElementById("userbot-setup").value,t=document.getElementById("userbot-getactions").value;location.hash="#"+[e?"setup="+enc(e):"",t?"action="+enc(t):""].filter(function(e){return e}).join("&")}function enc(e){return btoa(unescape(encodeURIComponent(e))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_")}function dec(e){return decodeURIComponent(escape(atob(unescape(e).replace(/-/g,"+").replace(/_/g,"/"))))}
 
 var renderLoop;
 (function($){
