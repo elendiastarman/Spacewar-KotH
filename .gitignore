@@ -1,5 +1,2 @@
-# Ignore everything but js files
-*
-
-!.gitignore
-!*.js
+main.css
+README.md

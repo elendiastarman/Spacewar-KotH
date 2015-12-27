@@ -120,9 +120,13 @@ function init() {
 	
 	var scriptNames = eval(jQuery("#script-names").text());
 	for (var i=0; i<scriptNames.length; i++) {
-		var sn = scriptNames[i].substring(9); //takes out "Spacewar/"
+		var sn = scriptNames[i].substring(14); //takes out "Spacewar/bots/"
 		if (sn.substr(0,4) === "bot_") {
 			players.push(sn.substring(4,sn.length-3));
+			if (sn.length-6 > maxlen) {
+				maxlen = sn.length-6;
+				q = charw * maxlen;
+			}
 		}
 	}
 	players.sort();
@@ -131,7 +135,7 @@ function init() {
 	d3.select('#playfield').append('br');
 	var selectGrid = d3.select('#playfield').append('svg')
 		.attr("id","selectGrid")
-		.attr("width",q+(players.length+3)*hs)
+		.attr("width",q+(players.length+4)*hs)
 		.attr("height",q+(players.length+1)*vs);
 	var selectGridBoxes = selectGrid.append("g")
 		.attr("id","selectGridBoxes")

@@ -134,6 +134,8 @@ function setupGame(start) {
 		});
 	}
 	
+	restartTime = false;
+	
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
 	red.rot = 90;
