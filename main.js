@@ -20,6 +20,7 @@ var renderLoop;
 				field.selectAll('.missileHit'+ship.color).remove();
 			});
 		});
+		load();
 	});
 })(jQuery);
 
