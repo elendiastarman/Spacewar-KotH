@@ -30,6 +30,10 @@ function Helios_getActions(gameInfo, botVars) {
         return v === undefined ? 0 : v;
     }
 
+    function sqr(x) {
+        return x * x
+    }
+
     function getEntity(source, prefix) {
         var tmpX = (field.posOffsetX + zeroIfUndefined(source[prefix + "x"])) % field.width - field.halfWidth;
         var tmpY = field.halfHeight - (field.posOffsetY + zeroIfUndefined(source[prefix + "y"])) % field.height;
@@ -38,14 +42,15 @@ function Helios_getActions(gameInfo, botVars) {
         var e = {};
         e.posX = tmpX * field.posCos - tmpY * field.posSin;
         e.posY = tmpX * field.posSin + tmpY * field.posCos;
-        e.posR = Math.sqrt(e.posX * e.posX + e.posY * e.posY),
-        e.posPhi = Math.atan2(e.posY, e.posX),
+        e.posR = Math.sqrt(sqr(e.posX) + sqr(e.posY));
+        e.posPhi = Math.atan2(e.posY, e.posX);
         e.posXV = tmpXV * field.posCos - tmpYV * field.posSin;
         e.posYV = tmpXV * field.posSin + tmpYV * field.posCos;
+        e.posV = Math.sqrt(sqr(e.posXV) + sqr(e.posYV));
         e.movX = tmpX * field.movCos - tmpY * field.movSin;
         e.movY = tmpX * field.movSin + tmpY * field.movCos;
-        e.movR = Math.sqrt(e.movX * e.movX + e.movY * e.movY),
-        e.movPhi = Math.atan2(e.movY, e.movX),
+        e.movR = Math.sqrt(sqr(e.movX) + sqr(e.movY));
+        e.movPhi = Math.atan2(e.movY, e.movX);
         e.movXV = (tmpXV + field.movOffsetXV) * field.movCos - (tmpYV + field.movOffsetYV) * field.movSin;
         e.movYV = (tmpXV + field.movOffsetXV) * field.movSin + (tmpYV + field.movOffsetYV) * field.movCos;
         return e;
@@ -65,32 +70,35 @@ function Helios_getActions(gameInfo, botVars) {
     var enemyShip = getShip(botVars.enemyPrefix);
     var sun = getEntity(gameInfo, "sun_");
 
-    enemyShip.intersectionLine = [[enemyShip.movX - enemyShip.movXV * 20, enemyShip.movY - enemyShip.movYV * 20],
-            [enemyShip.movX + enemyShip.movXV * 20, enemyShip.movY + enemyShip.movYV * 20]];
+    enemyShip.intersectionLine = [[enemyShip.movX - enemyShip.movXV * 30, enemyShip.movY - enemyShip.movYV * 30],
+            [enemyShip.movX + enemyShip.movXV * 30, enemyShip.movY + enemyShip.movYV * 30]];
 
-    var intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle) * 10 * 20, Math.sin(myShip.movAngle) * 10 * 20]],
+    var intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle) * 10 * 30, Math.sin(myShip.movAngle) * 10 * 30]],
             enemyShip.intersectionLine);
     if (intersection.length == 2) {
         myShip.intersection = Math.abs(intersection[1][0] / 2 + 0.5 - intersection[1][1]);
     }
-    intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle - 0.05) * 10 * 20, Math.sin(myShip.movAngle - 0.05) * 10 * 20]],
+    intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle - 0.001) * 10 * 30, Math.sin(myShip.movAngle - 0.001) * 10 * 30]],
             enemyShip.intersectionLine);
     if (intersection.length == 2) {
         myShip.intersectionLeft = Math.abs(intersection[1][0] / 2 + 0.5 - intersection[1][1]);
     }
-    intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle + 0.05) * 10 * 20, Math.sin(myShip.movAngle + 0.05) * 10 * 20]],
+    intersection = LineIntersection([[0, 0], [Math.cos(myShip.movAngle + 0.001) * 10 * 30, Math.sin(myShip.movAngle + 0.001) * 10 * 30]],
             enemyShip.intersectionLine);
     if (intersection.length == 2) {
         myShip.intersectionRight = Math.abs(intersection[1][0] / 2 + 0.5 - intersection[1][1]);
     }
 
     function danger() {
-        if (sun.movR < 40) {
+        var tmp1 = sqr(sun.movXV) + sqr(sun.movYV);
+        var tmp2 = tmp1 == 0 ? 0 : Math.max(0, Math.min(1, ((-sun.movX) * sun.movXV + (-sun.movY) * sun.movYV) / tmp1));
+        var dis = Math.sqrt(sqr(sun.movX + tmp2 * sun.movXV) + sqr(sun.movY + tmp2 * sun.movYV));
+        if (dis < 30) {
             return true;
         }
-        var shipLine1 = [[-18, 10], [-18, -10]];
-        var shipLine2 = [[-18, 10], [10, 0]];
-        var shipLine3 = [[-18, -10], [10, 0]];
+        var shipLine1 = [[-16, 8], [-16, -8]];
+        var shipLine2 = [[-16, 8], [8, 0]];
+        var shipLine3 = [[-16, -8], [8, 0]];
         if (gameInfo.missiles !== undefined) {
             for (var i = 0; i < gameInfo.missiles.length; i++) {
                 var missile = getEntity(gameInfo.missiles[i], "");
@@ -108,11 +116,11 @@ function Helios_getActions(gameInfo, botVars) {
 
     function fire() {
         return enemyShip.alive && !enemyShip.inHyperspace && myShip.intersection !== undefined &&
-            myShip.intersection < (330 - enemyShip.posR) / 300;
+            myShip.intersection < 0.1 + myShip.missileStock / 200;
     }
 
     function evadeSun() {
-        if ((sun.movPhi > 0 && myShip.movAngle < 0) || (sun.movPhi < 0 && myShip.movAngle > 0)) {
+        if ((sun.movPhi >= 0 && myShip.movAngle < 0) || (sun.movPhi <= 0 && myShip.movAngle > 0)) {
             actions.push("fire engine");
         }
         if (sun.movPhi > 0) {
@@ -142,16 +150,35 @@ function Helios_getActions(gameInfo, botVars) {
                 actions.push("turn right");
             }
         }
-        if (myShip.missileStock == 0) {
+        if (myShip.posV < 2 || (enemyShip.alive && (enemyShip.movXV >= 0 || myShip.missileStock == 0))) {
+            actions.push("fire engine");
+        }
+    }
+
+    function brake() {
+        if (myShip.movAngle > 0) {
+            actions.push("turn left");
+        } else {
+            actions.push("turn right");
+        }
+        if (Math.abs(myShip.movAngle) > Math.PI * 3 / 4) {
             actions.push("fire engine");
         }
     }
 
     function engage() {
-        if ((enemyShip.posPhi > 0 && enemyShip.posPhi < engageAngle) || enemyShip.posPhi < -engageAngle) {
-            actions.push("turn right");
+        if (enemyShip.missileStock > 0) {
+            if ((enemyShip.posPhi > 0 && enemyShip.posPhi < engageAngle) || enemyShip.posPhi < -engageAngle) {
+                actions.push("turn right");
+            } else {
+                actions.push("turn left");
+            }
         } else {
-            actions.push("turn left");
+            if (enemyShip.posPhi > 0) {
+                actions.push("turn left");
+            } else {
+                actions.push("turn right");
+            }
         }
         actions.push("fire engine");
     }
@@ -163,10 +190,12 @@ function Helios_getActions(gameInfo, botVars) {
         if (fire()) {
             actions.push("fire missile");
         }
-        if (!enemyShip.alive || enemyShip.inHyperspace || sun.movR < 150 || (sun.movR < 350 && Math.abs(sun.movPhi) < Math.PI)) {
+        if (enemyShip.exploded || enemyShip.inHyperspace || sun.movR < 150 || (sun.movR < 300 && Math.abs(sun.movPhi) < Math.PI)) {
             evadeSun();
-        } else if (enemyShip.posR < 300) {
+        } else if (enemyShip.posR < 300 || myShip.intersection !== undefined) {
             aim();
+        } else if (myShip.posV > 10) {
+            brake();
         } else {
             engage();
         }
