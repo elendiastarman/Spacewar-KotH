@@ -1,31 +1,7 @@
 "use strict";
 
-//permalink stuff
-function loadFromPermalink(){
-	if(location.hash){
-		location.hash.slice(1).split("&").map(function(e){
-			e=e.split("="),
-			"setup"==e[0]&&(document.getElementById("userbot-setup").value=dec(e[1])),
-			"action"==e[0]&&(document.getElementById("userbot-getactions").value=dec(e[1]))
-		})
-	}
-}
-
-function savePermalink(){
-	var e=document.getElementById("userbot-setup").value;
-	var t=document.getElementById("userbot-getactions").value;
-	location.hash="#"+[e?"setup="+enc(e):"",t?"action="+enc(t):""].filter(function(e){return e}).join("&");
-}
-
-function enc(e){
-	return btoa(unescape(encodeURIComponent(e))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
-}
-
-function dec(e){
-	return decodeURIComponent(escape(atob(unescape(e).replace(/-/g,"+").replace(/_/g,"/"))));
-}
-
 var renderLoop;
+var accelerated = 0;
 (function($){
 	$(document).ready(function (){
 		console.log("main.js");
@@ -43,6 +19,11 @@ var renderLoop;
 				field.selectAll('.missileHit'+ship.color).remove();
 			});
 		});
+		$('#accelerated').on('change', function(){
+			accelerated = !accelerated;
+			clearInterval(renderLoop);
+			renderLoop = setInterval(update, accelerated ? 1 : 0);
+		});
 		loadFromPermalink();
 	});
 })(jQuery);
@@ -53,6 +34,11 @@ var bluePlayer = "userbot";
 var redVars = {};
 var blueVars = {};
 var theGame;
+var redWins = 0;
+var blueWins = 0;
+var numGames = 20;
+var inProgress = 0;
+var isDone = 0;
 
 var vs = 20;
 var hs = 25;
@@ -93,7 +79,10 @@ function playerSet(a,b) {
 		
 		redVars = window[redPlayer+"_setup"]("red");
 		blueVars = window[bluePlayer+"_setup"]("blue");
+		redWins = 0;
+		blueWins = 0;
 		
+		if (!renderLoop) { renderLoop = setInterval(update, accelerated ? 1 : 0); }
 		setupGame(1);
 	}
 }
@@ -101,7 +90,10 @@ function playerSet(a,b) {
 function updateHighlights() {
 	console.log("Players: "+redPlayer+", "+bluePlayer)
 	d3.select('#selectGridBoxes').selectAll('polygon').attr("fill","white");
-	d3.select('#selectGrid').selectAll('text').attr("fill","black");
+	d3.select('#selectGridTexts').selectAll('text').attr("fill","black");
+	
+	d3.select("#redWins").attr("fill","red");
+	d3.select("#blueWins").attr("fill","blue");
 	
 	d3.select('#redName-'+redPlayer).attr("fill","white");
 	d3.select('#blueName-'+bluePlayer).attr("fill","white");
@@ -145,6 +137,11 @@ function init() {
 		.attr("fill","none")
 		.attr("stroke","black")
 		.attr("stroke-width","2px");
+	var selectGridTexts = selectGrid.append("g")
+		.attr("id","selectGridTexts")
+		.attr("fill","black")
+		.attr("font-family","sans-serif")
+		.attr("font-size","15px");
 	
 	selectGridLines.append("polyline")
 		.attr("points", horizLineCoords(0));
@@ -158,14 +155,14 @@ function init() {
 		selectGridLines.append("polyline")
 			.attr("points", vertLineCoords(j+1));
 		
-		selectGrid.append("text")
+		selectGridTexts.append("text")
 			.attr("text-anchor","end")
 			.attr("x",charw*maxlen - charw/2)
 			.attr("y",charw*maxlen + (j+1)*vs - charh/2+1)
 			.attr("id","redName-"+players[j])
 			.on("click", playerSet(j,-1))
 			.text(players[j]);
-		selectGrid.append("text")
+		selectGridTexts.append("text")
 			.attr("text-anchor","start")
 			.attr("x",charw*maxlen + (j+1)*hs - hs/2)
 			.attr("y",charw*maxlen)
@@ -194,12 +191,36 @@ function init() {
 		}
 	}
 	
+	selectGridTexts.append("text")
+		.attr("x",0)
+		.attr("y",20)
+		.attr("font-size","20px")
+		.attr("id","redWins")
+		.text("Red wins: 0");
+	selectGridTexts.append("text")
+		.attr("x",0)
+		.attr("y",40)
+		.attr("font-size","20px")
+		.attr("id","blueWins")
+		.text("Blue wins: 0");
+	
 	updateHighlights();
-
 }
 
 function update() {
-	if (gameOver) { return; }
+	if (accelerated) {
+		if (inProgress) { return; }
+		if (redWins + blueWins >= numGames) {
+			if (runAll) {
+				//continue to the next pairing
+			} else {
+				clearInterval(renderLoop);
+				renderLoop = false;
+			}
+		}
+	} else {
+		if (gameOver) { return; }
+	}
 	
 	var uniqueRedActions = [""];
 	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
@@ -232,8 +253,19 @@ function update() {
 		jQuery("#blue-"+action.replace(" ","-")).addClass("blueAction");
 	});
 	
-	if (updateGame()) {
+	inProgress = 1;
+	isDone = updateGame();
+	inProgress = 0;
+	
+	if (isDone) {
 		// do whatever is done upon finishing a game
+		if (red.score > blue.score) {
+			redWins += 1;
+		} else if (red.score < blue.score) {
+			blueWins += 1;
+		}
+		d3.select("#redWins").text("Red wins: "+redWins);
+		d3.select("#blueWins").text("Blue wins: "+blueWins);
 	}
 }
 
@@ -292,4 +324,30 @@ function human_getActions(gameInfo,botVars) {
 function setUserBotCode() {
 	window["userbot_setup"] = new Function("team", "var botVars = {};\n"+jQuery("#userbot-setup").val()+"\n\nreturn botVars;");
 	window["userbot_getActions"] = new Function("gameInfo", "botVars", "var actions = [];\n"+jQuery("#userbot-getactions").val()+"\nreturn actions;");
+}
+
+
+//permalink stuff
+function loadFromPermalink(){
+	if(location.hash){
+		location.hash.slice(1).split("&").map(function(e){
+			e=e.split("="),
+			"setup"==e[0]&&(document.getElementById("userbot-setup").value=dec(e[1])),
+			"action"==e[0]&&(document.getElementById("userbot-getactions").value=dec(e[1]))
+		})
+	}
+}
+
+function savePermalink(){
+	var e=document.getElementById("userbot-setup").value;
+	var t=document.getElementById("userbot-getactions").value;
+	location.hash="#"+[e?"setup="+enc(e):"",t?"action="+enc(t):""].filter(function(e){return e}).join("&");
+}
+
+function enc(e){
+	return btoa(unescape(encodeURIComponent(e))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
+}
+
+function dec(e){
+	return decodeURIComponent(escape(atob(unescape(e).replace(/-/g,"+").replace(/_/g,"/"))));
 }
