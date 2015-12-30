@@ -22,21 +22,28 @@ var accelerated = 0;
 		$('#accelerated').on('change', function(){
 			accelerated = !accelerated;
 			clearInterval(renderLoop);
-			renderLoop = setInterval(update, accelerated ? 0 : 30);
+			if (!accelerated) {
+				renderLoop = setInterval(update, 30);
+			} else {
+				renderLoop = setInterval(updateFast, 0);
+			}
 		});
 		loadFromPermalink();
 	});
 })(jQuery);
 
 var players = [];
+
 var redPlayer = "human";
 var bluePlayer = "userbot";
 var redVars = {};
 var blueVars = {};
-var theGame;
+var uniqueRedActions;
+var uniqueBlueActions;
 var redWins = 0;
 var blueWins = 0;
 
+var theGame;
 var numGames = 20;
 var inProgress = 0;
 var isDone = 0;
@@ -84,7 +91,13 @@ function playerSet(a,b) {
 		redWins = 0;
 		blueWins = 0;
 		
-		if (!renderLoop) { renderLoop = setInterval(update, accelerated ? 0 : 30); }
+		if (!renderLoop) {
+			if (accelerated) {
+				renderLoop = setInterval(update, 30);
+			} else {
+				renderLoop = setInterval(updateFast, 0);
+			}
+		}
 		setupGame(1);
 	}
 }
@@ -210,41 +223,9 @@ function init() {
 }
 
 function update() {
-	if (accelerated) {
-		if (inProgress) { return; }
-		if (redWins + blueWins >= numGames) {
-			if (runAll) {
-				//continue to the next pairing
-			} else {
-				clearInterval(renderLoop);
-				renderLoop = false;
-			}
-		}
-	} else {
-		if (gameOver) { return; }
-	}
+	if (gameOver) { return; }
 	
-	var uniqueRedActions = [""];
-	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
-	if (redActions.indexOf("hyperspace") > -1) {
-		uniqueRedActions.push("hyperspace");
-	} else {
-		for (var i=0; i<redActions.length; i++) {
-			if (redActions.indexOf(redActions[i]) == i) { uniqueRedActions.push(redActions[i]) }
-		}
-	}
-	teamMove("red",uniqueRedActions);
-	
-	var uniqueBlueActions = [""];
-	var blueActions = window[bluePlayer+"_getActions"](theGame,blueVars);
-	if (blueActions.indexOf("hyperspace") > -1) {
-		uniqueBlueActions.push("hyperspace");
-	} else {
-		for (var i=0; i<blueActions.length; i++) {
-			if (blueActions.indexOf(blueActions[i]) == i) { uniqueBlueActions.push(blueActions[i]) }
-		}
-	}
-	teamMove("blue",uniqueBlueActions);
+	moveShips();
 	
 	jQuery('#action-table').find("td").each(function(i,elem){ jQuery(elem).removeClass("redAction blueAction") });
 	
@@ -255,22 +236,69 @@ function update() {
 		jQuery("#blue-"+action.replace(" ","-")).addClass("blueAction");
 	});
 	
-	inProgress = 1;
 	isDone = updateGame();
-	inProgress = 0;
 	
 	if (isDone) {
 		// do whatever is done upon finishing a game
-		if (red.score > blue.score) {
-			redWins += 1;
-		} else if (red.score < blue.score) {
-			blueWins += 1;
-		}
-		d3.select("#redWins").text("Red wins: "+redWins);
-		d3.select("#blueWins").text("Blue wins: "+blueWins);
+		updateWinText();
 		isDone = 0;
+	}
+}
+
+function updateFast() {
+	if (inProgress) { return; }
+	
+	inProgress = 1;
+	while (!updateGame()) { moveShips(); }
+	inProgress = 0;
+	
+	updateWinText();
+	isDone = 0;
+	
+	if (redWins + blueWins >= numGames) {
+		if (runAll) {
+			//continue to the next pairing
+		} else {
+			clearInterval(renderLoop);
+			renderLoop = false;
+		}
+	} else {
 		setupGame(1);
 	}
+}
+
+function updateWinText() {
+	if (red.score > blue.score) {
+		redWins += 1;
+	} else if (red.score < blue.score) {
+		blueWins += 1;
+	}
+	d3.select("#redWins").text("Red wins: "+redWins);
+	d3.select("#blueWins").text("Blue wins: "+blueWins);
+}
+
+function moveShips() {
+	uniqueRedActions = [""];
+	var redActions = window[redPlayer+"_getActions"](theGame,redVars);
+	if (redActions.indexOf("hyperspace") > -1) {
+		uniqueRedActions.push("hyperspace");
+	} else {
+		for (var i=0; i<redActions.length; i++) {
+			if (redActions.indexOf(redActions[i]) == i) { uniqueRedActions.push(redActions[i]) }
+		}
+	}
+	teamMove("red",uniqueRedActions);
+	
+	uniqueBlueActions = [""];
+	var blueActions = window[bluePlayer+"_getActions"](theGame,blueVars);
+	if (blueActions.indexOf("hyperspace") > -1) {
+		uniqueBlueActions.push("hyperspace");
+	} else {
+		for (var i=0; i<blueActions.length; i++) {
+			if (blueActions.indexOf(blueActions[i]) == i) { uniqueBlueActions.push(blueActions[i]) }
+		}
+	}
+	teamMove("blue",uniqueBlueActions);
 }
 
 var keystates = {};
