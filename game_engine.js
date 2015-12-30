@@ -31,9 +31,9 @@ for (var i=0; i<8; i++) {
 	sun.points.push([px,py]);
 }
 
-var missileTimeout = 2250;
+var missileTimeout = 75; //75 frames, 2250 ms;
 var missileSpeed = 10;
-var fireRateLimit = 100;
+var fireRateLimit = 4; //3 frames, 120 ms
 var missileMax = 20;
 
 var gravityStrength = 1*5000;
@@ -46,18 +46,17 @@ var overideHyperspace = null; // if you wish to disable hyperspace death, set th
 	gameInfo[attr] = window[attr];
 });
 
-var hyperDuration = 1000;
-var deathDuration = 1000;
+var hyperDuration = 34; //34 frames, 1020 ms
+var deathDuration = 34; //34 frames, 1020 ms
 
-var restartTime = false;
-var gameDuration = 90;
-var startTime;
+var frameCount;
+var restartFrame = false;
+var gameDuration = 3000; //3000 frames, 90 seconds
 
 function getRemainingTime() {
-	var elapsedTime = new Date() - startTime;
-	var remainingTime = gameDuration - (Math.floor(elapsedTime/1000));
-	if (remainingTime > 0) {
-		return Math.floor(remainingTime/60)+":"+(("00"+remainingTime%60).slice(-2));
+	var remainingFrames = gameDuration - frameCount;
+	if (remainingFrames > 0) {
+		return Math.floor((remainingFrames/(100/3))/60)+":"+(("00"+Math.floor(remainingFrames/(100/3))%60).slice(-2));
 	} else {
 		return "GAME OVER";
 	}
@@ -98,7 +97,7 @@ function initGame() {
 		.text(function(d){ return d.getText(); });
 	gameInfo.redScore = 0;
 	gameInfo.blueScore = 0;
-	gameInfo.timeLeft = gameDuration;
+	gameInfo.timeLeft;// = gameDuration;
 	
 	field.append("circle") //sun
 		.attr("cx",sun.cx)
@@ -128,13 +127,13 @@ function setupGame(start) {
 	if (start) {
 		gameOver = 0;
 		
-		startTime = new Date();
+		frameCount = 0;
 		teams.forEach(function(ship){
 			ship.score = 0;
 		});
 	}
 	
-	restartTime = false;
+	restartFrame = false;
 	
 	red.x = 50;
 	red.y = Math.floor((fieldHeight-100)*Math.random())+50;
@@ -149,7 +148,7 @@ function setupGame(start) {
 	teams.forEach(function(ship){
 		ship.xv = 0.0;
 		ship.yv = 0.0;
-		ship.fireTime = new Date() - 1000;
+		ship.fireFrame = -1;
 		ship.missileReady = true;
 		ship.missileStock = missileMax;
 		ship.updateShape = true;
@@ -158,8 +157,8 @@ function setupGame(start) {
 		ship.flame = 0;
 		ship.turnRate = 5;
 			
-		ship.deathTime = false;
-		ship.hyperTime = false;
+		ship.deathFrame = false;
+		ship.hyperFrame = false;
 		ship.exploded = false;
 		ship.alive = true;
 		
@@ -183,49 +182,44 @@ function setupGame(start) {
 }
 
 function updateGame() {
-	if (new Date() - startTime > gameDuration*1000) {
+	if (frameCount > gameDuration) {
 		timeLeft.text = "GAME OVER";
 		gameOver = 1;
 		updatePositions(1);
 		updateGraphics(1);
 		return 1;
-	} else if (restartTime && new Date() - restartTime > 3000) {
+	} else if (restartFrame && frameCount - restartFrame > 90) {
 		setupGame(0);
-		restartTime = false;
+		restartFrame = false;
 		return 0;
 	}
-	
-	// checkKeys();
 	
 	if (missiles.length){
 		var filteredMissiles = [];
 		for (var i=0; i<missiles.length; i++) {
 			var m = missiles[i];
-			if (new Date() - m.time > missileTimeout){ m.live = false; }
+			if (frameCount - m.frameNum > missileTimeout){ m.live = false; }
 				
 			if (m.live) {
 				filteredMissiles.push(m);
 			}
 		}
 		missiles = filteredMissiles;
-		
-		var dots = d3.select("#field").selectAll('.missile').data(missiles);
-		dots.attr("cx", function(d){ return d.x; })
-			.attr("cy", function(d){ return d.y; });
-		dots.exit().remove();
 	}
 	
-	if (redPlayer !== "human" && new Date() - red.fireTime > fireRateLimit) { red.missileReady = true; }
-	if (bluePlayer !== "human" && new Date() - blue.fireTime > fireRateLimit) { blue.missileReady = true; }
+	if (redPlayer !== "human" && frameCount - red.fireFrame > fireRateLimit) { red.missileReady = true; }
+	if (bluePlayer !== "human" && frameCount - blue.fireFrame > fireRateLimit) { blue.missileReady = true; }
 	
 	updatePositions(0);
-	updateGraphics(0);
+	if (!accelerated) {
+		updateGraphics(0);
+	}
 	
 	teams.forEach(function(ship){
 		["x","y","rot","xv","yv","shape","missileStock","exploded","alive"].forEach(function(attr){
 			gameInfo[ship.color+"_"+attr] = ship[attr];
 		});
-		gameInfo[ship.color+"_inHyperspace"] = ship.hyperTime ? true : false;
+		gameInfo[ship.color+"_inHyperspace"] = ship.hyperFrame ? true : false;
 	});
 	
 	gameInfo.missiles = [];
@@ -236,8 +230,9 @@ function updateGame() {
 	
 	gameInfo.redScore = red.score;
 	gameInfo.blueScore = blue.score;
-	gameInfo.timeLeft = Math.floor(gameDuration - (new Date() - startTime));
+	gameInfo.timeLeft = Math.floor((gameDuration - frameCount)/30);
 	
+	frameCount += 1;
 	return 0;
 }
 
@@ -252,7 +247,7 @@ function updatePositions(debrisOnly) {
 	var sun = d3.select('#sun');
 	
 	teams.forEach(function(ship){
-		if (ship.alive && !ship.hyperTime) {
+		if (ship.alive && !ship.hyperFrame) {
 			var dx = ship.x - sun.attr('cx');
 			var dy = ship.y - sun.attr('cy');
 			var dis = Math.sqrt(dx*dx+dy*dy);
@@ -306,7 +301,7 @@ function updatePositions(debrisOnly) {
 	});
 	
 	teams.forEach(function(ship){
-		if (!ship.hyperTime) {
+		if (!ship.hyperFrame) {
 			if (!ship.exploded) {
 				ship.x += ship.xv;
 				ship.x = (ship.x+fieldWidth)%fieldWidth;
@@ -315,17 +310,29 @@ function updatePositions(debrisOnly) {
 			}
 			
 			if (!ship.alive) {
+				if (!ship.deathFrame) {
+					field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
+					ship.deathFrame = frameCount;
+					restartFrame = frameCount;
+					
+					if (ship.color === "red") {
+						blue.score += 1;
+					} else if (ship.color === "blue") {
+						red.score += 1;
+					}
+				}
+				
 				ship.xv = 0;
 				ship.yv = 0;
 			}
-		} else if (new Date() - ship.hyperTime > hyperDuration) {
+		} else if (frameCount - ship.hyperFrame > hyperDuration) {
 			ship.x = Math.random()*(fieldWidth-100)+50;
 			ship.y = Math.random()*(fieldHeight-100)+50;
 			ship.xv = 0;
 			ship.yv = 0;
-			var deathChance = overideHyperspace==null?(ship.shape === "full ship" ? 0.25 : 0.5):overideHyperspace;
+			var deathChance = overideHyperspace==null ? (ship.shape === "full ship" ? 0.25 : 0.5) : overideHyperspace;
 			if (Math.random() < deathChance) { ship.alive = false; }
-			ship.hyperTime = false;
+			ship.hyperFrame = false;
 		} else {
 			ship.x = -200;
 			ship.y = -200;
@@ -347,19 +354,27 @@ function updateGraphics(debrisOnly) {
 		.text(function(d){ return d.getText(); });
 	
 	var filteredDebris = [];
-	var now = new Date();
 	for (var i=0; i<debris.length; i++) {
-		if (now < debris[i].time) { filteredDebris.push(debris[i]); }
+		if (frameCount < debris[i].frameNum) { filteredDebris.push(debris[i]); }
 	}
 	debris = filteredDebris;
 	
-	field.selectAll('.debris').data(debris)
-		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
-		.attr("points",function(d){ return d.pointsStr; })
-		.style("fill",function(d){ return d.color; });
-	field.selectAll('.debris').data(debris).exit().remove();
+	if (!accelerated) {
+		field.selectAll('.debris').data(debris)
+			.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
+			.attr("points",function(d){ return d.pointsStr; })
+			.style("fill",function(d){ return d.color; });
+		field.selectAll('.debris').data(debris).exit().remove();
+	}
 	
 	if (debrisOnly) { return; }
+	
+	if (!accelerated) {
+		var dots = d3.select("#field").selectAll('.missile').data(missiles);
+		dots.attr("cx", function(d){ return d.x; })
+			.attr("cy", function(d){ return d.y; });
+		dots.exit().remove();
+	}
 	
 	field.selectAll(".ship").data(teams)
 		.attr("transform",function(ship){return "translate("+ship.x+","+ship.y+"),rotate("+ship.rot+")";});
@@ -398,18 +413,7 @@ function updateGraphics(debrisOnly) {
 		}
 		
 		if (!ship.alive) {
-			if (!ship.deathTime) {
-				field.select('#'+ship.color).style("fill",ship.alive ? ship.color : ship.deadColor);
-				ship.deathTime = new Date();
-				restartTime = new Date();
-				
-				if (ship.color === "red") {
-					blue.score += 1;
-				} else if (ship.color === "blue") {
-					red.score += 1;
-				}
-				
-			} else if (new Date() - ship.deathTime > deathDuration && ship.exploded === false) {
+			if (frameCount - ship.deathFrame > deathDuration && ship.exploded === false) {
 				switch (ship.shape) {
 					case "full ship":
 						shipDebris(ship,"kill full");
@@ -441,7 +445,7 @@ function teamMove(team,actions) {
 	var engineFired = 0;
 	
 	actions.forEach(function(action){
-		if (ship.alive && !ship.hyperTime) {
+		if (ship.alive && !ship.hyperFrame) {
 			if (ship.shape === "nose only" && action !== "fire missile") { return; }
 			switch (action){
 				case "fire engine":
@@ -450,8 +454,8 @@ function teamMove(team,actions) {
 					engineFired = 1;
 					break;
 				case "fire missile":
-					if (new Date() - ship.fireTime > fireRateLimit && ship.missileReady && ship.missileStock) {
-						ship.fireTime = new Date();
+					if (frameCount - ship.fireFrame > fireRateLimit && ship.missileReady && ship.missileStock) {
+						ship.fireFrame = frameCount;
 						ship.missileReady = false;
 						ship.missileStock -= 1;
 						fireMissile(ship);
@@ -464,7 +468,7 @@ function teamMove(team,actions) {
 					ship.rot = ship.rot - ship.turnRate;
 					break;
 				case "hyperspace":
-					ship.hyperTime = new Date();
+					ship.hyperFrame = frameCount;
 					break;
 			}
 		}
@@ -701,17 +705,18 @@ function fireMissile(ship) {
 	var dis = Math.sqrt(dx*dx+dy*dy);
 	if (dis <= sun.r || checkShipSunCollision(ship,true)) { return; }
 	
-	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'time':new Date(), 'live':true});
-	missiles[missiles.length-1]['id'] = missiles.length;
+	missiles.push({'x':mx, 'y':my, 'xv':mxv, 'yv':myv, 'frameNum':frameCount, 'live':true, 'id':missiles.length+1});
 	
-	d3.select("#field").selectAll(".missile")
-		.data(missiles)
-	  .enter().append("circle")
-		.attr("cx", function(d){ return d.x; })
-		.attr("cy", function(d){ return d.y; })
-		.attr("r", 1.5)
-		.style("fill","white")
-		.attr("class", "missile");
+	if (!accelerated) {
+		d3.select("#field").selectAll(".missile")
+			.data(missiles)
+		  .enter().append("circle")
+			.attr("cx", function(d){ return d.x; })
+			.attr("cy", function(d){ return d.y; })
+			.attr("r", 1.5)
+			.style("fill","white")
+			.attr("class", "missile");
+	}
 }
 
 function checkMissileCollision(m, obj) {
@@ -960,21 +965,22 @@ function shipDebris(ship,kind) {
 		}
 		var rotVel = Math.random()*2-1;
 		var rot = Math.random()*360;
-		var now = new Date();
-		var time = new Date(now.getTime() + 1000 + Math.floor(Math.random()*500)); //http://stackoverflow.com/a/17267937/1473772
+		var frameNum = frameCount + 34 + Math.floor(Math.random()*17);
 		var xv = Math.random()*2-1;
 		var yv = Math.random()*2-1;
 		
 		var fragment = {'x':cx, 'y':cy, 'xv':xv, 'yv':yv,
 						'rot':rot, 'rotVel':rotVel,
-						'pointsStr':pointsStr, 'color':ship.deadColor, 'time':time}
+						'pointsStr':pointsStr, 'color':ship.deadColor, 'frameNum':frameNum}
 		debris.push(fragment);
 	}
 	
-	field.selectAll('.debris').data(debris)
-	  .enter().append("polygon")
-		.attr("points",function(d){ return d.pointsStr; })
-		.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
-		.attr("class","debris")
-		.style("fill",function(d){ return d.color });
+	if (!accelerated) {
+		field.selectAll('.debris').data(debris)
+		  .enter().append("polygon")
+			.attr("points",function(d){ return d.pointsStr; })
+			.attr("transform",function(d){ return "translate("+d.x+","+d.y+"),rotate("+d.rot+")"; })
+			.attr("class","debris")
+			.style("fill",function(d){ return d.color });
+	}
 }

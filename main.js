@@ -22,7 +22,7 @@ var accelerated = 0;
 		$('#accelerated').on('change', function(){
 			accelerated = !accelerated;
 			clearInterval(renderLoop);
-			renderLoop = setInterval(update, accelerated ? 1 : 0);
+			renderLoop = setInterval(update, accelerated ? 0 : 30);
 		});
 		loadFromPermalink();
 	});
@@ -36,9 +36,11 @@ var blueVars = {};
 var theGame;
 var redWins = 0;
 var blueWins = 0;
+
 var numGames = 20;
 var inProgress = 0;
 var isDone = 0;
+var runAll = 0;
 
 var vs = 20;
 var hs = 25;
@@ -82,7 +84,7 @@ function playerSet(a,b) {
 		redWins = 0;
 		blueWins = 0;
 		
-		if (!renderLoop) { renderLoop = setInterval(update, accelerated ? 1 : 0); }
+		if (!renderLoop) { renderLoop = setInterval(update, accelerated ? 0 : 30); }
 		setupGame(1);
 	}
 }
@@ -266,6 +268,8 @@ function update() {
 		}
 		d3.select("#redWins").text("Red wins: "+redWins);
 		d3.select("#blueWins").text("Blue wins: "+blueWins);
+		isDone = 0;
+		setupGame(1);
 	}
 }
 
