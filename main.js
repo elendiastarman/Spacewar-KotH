@@ -92,7 +92,7 @@ function playerSet(a,b) {
 		blueWins = 0;
 		
 		if (!renderLoop) {
-			if (accelerated) {
+			if (!accelerated) {
 				renderLoop = setInterval(update, 30);
 			} else {
 				renderLoop = setInterval(updateFast, 0);
