@@ -230,7 +230,7 @@ function updateGame() {
 	
 	gameInfo.redScore = red.score;
 	gameInfo.blueScore = blue.score;
-	gameInfo.timeLeft = Math.floor((gameDuration - frameCount)/30);
+	gameInfo.timeLeft = Math.floor((gameDuration - frameCount)/(100/3));
 	
 	frameCount += 1;
 	return 0;

@@ -6,7 +6,7 @@ var accelerated = 0;
 	$(document).ready(function (){
 		console.log("main.js");
 		init();
-		renderLoop = setInterval(update, 30);
+		setRenderLoopInterval();
 		$('#playfield').focus();
 		$('#playfield').bind("keydown",handleInput);
 		$('#playfield').bind("keyup",handleInput);
@@ -21,16 +21,23 @@ var accelerated = 0;
 		});
 		$('#accelerated').on('change', function(){
 			accelerated = !accelerated;
-			clearInterval(renderLoop);
-			if (!accelerated) {
-				renderLoop = setInterval(update, 30);
-			} else {
-				renderLoop = setInterval(updateFast, 0);
-			}
+			setRenderLoopInterval();
+		});
+		$('#numGames').on('change', function(){
+			numGames = $(this).val();
 		});
 		loadFromPermalink();
 	});
 })(jQuery);
+
+function setRenderLoopInterval() {
+	clearInterval(renderLoop);
+	if (!accelerated) {
+		renderLoop = setInterval(update, 30);
+	} else {
+		renderLoop = setInterval(updateFast, 0);
+	}
+}
 
 var players = [];
 
@@ -42,12 +49,21 @@ var uniqueRedActions;
 var uniqueBlueActions;
 var redWins = 0;
 var blueWins = 0;
+var ties = 0;
+var winRecord = {};
 
 var theGame;
 var numGames = 20;
 var inProgress = 0;
 var isDone = 0;
-var runAll = 0;
+var multiRun = 0;
+
+var redIdx = 0;
+var redIdxMin;
+var redIdxMax;
+var blueIdx = 1;
+var blueIdxMin;
+var blueIdxMax;
 
 var vs = 20;
 var hs = 25;
@@ -88,16 +104,15 @@ function playerSet(a,b) {
 		
 		redVars = window[redPlayer+"_setup"]("red");
 		blueVars = window[bluePlayer+"_setup"]("blue");
+		redIdx = players.indexOf(redPlayer);
+		blueIdx = players.indexOf(bluePlayer);
+		
 		redWins = 0;
 		blueWins = 0;
+		ties = 0;
+		updateWinText();
 		
-		if (!renderLoop) {
-			if (!accelerated) {
-				renderLoop = setInterval(update, 30);
-			} else {
-				renderLoop = setInterval(updateFast, 0);
-			}
-		}
+		setRenderLoopInterval();
 		setupGame(1);
 	}
 }
@@ -105,10 +120,7 @@ function playerSet(a,b) {
 function updateHighlights() {
 	console.log("Players: "+redPlayer+", "+bluePlayer)
 	d3.select('#selectGridBoxes').selectAll('polygon').attr("fill","white");
-	d3.select('#selectGridTexts').selectAll('text').attr("fill","black");
-	
-	d3.select("#redWins").attr("fill","red");
-	d3.select("#blueWins").attr("fill","blue");
+	d3.select('#selectGridTexts').selectAll('.playerName').attr("fill","black");
 	
 	d3.select('#redName-'+redPlayer).attr("fill","white");
 	d3.select('#blueName-'+bluePlayer).attr("fill","white");
@@ -175,6 +187,7 @@ function init() {
 			.attr("x",charw*maxlen - charw/2)
 			.attr("y",charw*maxlen + (j+1)*vs - charh/2+1)
 			.attr("id","redName-"+players[j])
+			.attr("class","playerName")
 			.on("click", playerSet(j,-1))
 			.text(players[j]);
 		selectGridTexts.append("text")
@@ -182,6 +195,7 @@ function init() {
 			.attr("x",charw*maxlen + (j+1)*hs - hs/2)
 			.attr("y",charw*maxlen)
 			.attr("id","blueName-"+players[j])
+			.attr("class","playerName")
 			.attr("transform","rotate(-63.435 "+(charw*maxlen+(j+1)*hs-hs/2)+","+(charw*maxlen-vs/2)+")")
 			.on("click", playerSet(-1,j))
 			.text(players[j]);
@@ -209,15 +223,23 @@ function init() {
 	selectGridTexts.append("text")
 		.attr("x",0)
 		.attr("y",20)
+		.attr("fill","red")
 		.attr("font-size","20px")
 		.attr("id","redWins")
 		.text("Red wins: 0");
 	selectGridTexts.append("text")
 		.attr("x",0)
 		.attr("y",40)
+		.attr("fill","blue")
 		.attr("font-size","20px")
 		.attr("id","blueWins")
 		.text("Blue wins: 0");
+	selectGridTexts.append("text")
+		.attr("x",0)
+		.attr("y",60)
+		.attr("font-size","20px")
+		.attr("id","ties")
+		.text("Ties: 0");
 	
 	updateHighlights();
 }
@@ -256,8 +278,28 @@ function updateFast() {
 	isDone = 0;
 	
 	if (redWins + blueWins >= numGames) {
-		if (runAll) {
+		if (!winRecord[redIdx+','+blueIdx]) {
+			winRecord[redIdx+','+blueIdx] = {'rbi':redIdx+','+blueIdx, 'red':{'c':"red", 'i':redIdx, 'w':0}, 'blue':{'c':"blue", 'i':blueIdx, 'w':0}};
+		}
+		winRecord[redIdx+','+blueIdx].red.w += redWins;
+		winRecord[redIdx+','+blueIdx].blue.w += blueWins;
+		updateWinRecordTexts();
+		
+		if (multiRun) {
 			//continue to the next pairing
+			blueIdx += 1;
+			if (blueIdx > blueIdxMax) {
+				redIdx += 1;
+				blueIdx = blueIdxMin;
+			}
+			if (redIdx > redIdxMax) {
+				multiRun = false;
+				clearInterval(renderLoop);
+				renderLoop = false;
+				return;
+			}
+			
+			playerSet(redIdx,blueIdx)();
 		} else {
 			clearInterval(renderLoop);
 			renderLoop = false;
@@ -270,11 +312,33 @@ function updateFast() {
 function updateWinText() {
 	if (red.score > blue.score) {
 		redWins += 1;
+		d3.select("#redWins").text("Red wins: "+redWins);
 	} else if (red.score < blue.score) {
 		blueWins += 1;
+		d3.select("#blueWins").text("Blue wins: "+blueWins);
+	} else {
+		ties += 1;
+		d3.select("#ties").text("Ties: "+ties);
 	}
-	d3.select("#redWins").text("Red wins: "+redWins);
-	d3.select("#blueWins").text("Blue wins: "+blueWins);
+}
+
+function updateWinRecordTexts() {
+	var WRlist = [];
+	jQuery.each(winRecord, function(x,y){ WRlist.push(y); });
+	
+	["red","blue"].forEach(function(color) {
+		var data = d3.select("#selectGridTexts").selectAll("."+color+"WinRecord").data(WRlist, function(d){ return d.rbi; });
+		data.enter().append("text")
+			.attr("class", color+"WinRecord")
+			.attr("fill", color)
+			.attr("x", function(d){ return q + d["blue"].i*hs + (color === "red" ? 2 : hs-2); })
+			.attr("y", function(d){ return q + d["red"].i*vs + (color === "red" ? 1 : vs-1); })
+			.attr("text-anchor", function(){ return (color === "red" ? "start" : "end"); })
+			.attr("alignment-baseline", function(){ return (color === "red" ? "before-edge" : "after-edge"); })
+			.attr("font-size", "10px");
+		data.text(function(d,i){ return d[color].w; });
+		data.exit().remove();
+	});
 }
 
 function moveShips() {
@@ -301,6 +365,36 @@ function moveShips() {
 	teamMove("blue",uniqueBlueActions);
 }
 
+function runAll(kind) {
+	if (kind === "all") {
+		redIdxMin = 2;
+		redIdxMax = players.length-1;
+		blueIdxMin = 2;
+		blueIdxMax = players.length-1;
+	} else if (kind === "red") {
+		if (redPlayer === "human") { return; }
+		
+		redIdxMin = players.indexOf(redPlayer);
+		redIdxMax = redIdxMin;
+		blueIdxMin = 2;
+		blueIdxMax = players.length-1;
+	} else if (kind === "blue") {
+		if (bluePlayer === "human") { return; }
+		
+		redIdxMin = 2;
+		redIdxMax = players.length-1;
+		blueIdxMin = players.indexOf(bluePlayer);
+		blueIdxMax = blueIdxMin;
+	}
+	
+	console.log(redIdx,redIdxMin,redIdxMax);
+	console.log(blueIdx,blueIdxMin,blueIdxMax);
+	multiRun = true;
+	redIdx = redIdxMin;
+	blueIdx = blueIdxMin;
+	playerSet(redIdx,blueIdx)();
+}
+
 var keystates = {};
 function handleInput(event) {
 	if (event.target.id !== 'playfield') { return; }
@@ -312,7 +406,7 @@ function handleInput(event) {
 		return;
 	} else if (event.which == 13){ //ENTER key, resumes animation
 		event.preventDefault();
-		if (!renderLoop){ renderLoop = setInterval(update, 30); }
+		setRenderLoopInterval();
 		return;
 	} else if (event.which == 32 && event.type == 'keyup'){ //SPACEBAR key, resets field
 		setupGame(0);
