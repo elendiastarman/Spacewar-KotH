@@ -188,7 +188,7 @@ function updateGame() {
 		updatePositions(1);
 		updateGraphics(1);
 		return 1;
-	} else if (restartFrame && frameCount - restartFrame > 90) {
+	} else if (restartFrame && frameCount - restartFrame > 100) {
 		setupGame(0);
 		restartFrame = false;
 		return 0;
