@@ -26,7 +26,6 @@ function Arrow_getActions(gameInfo, botVars) {
     if (gameInfo[botVars['epref'] + 'alive']) {
         var angle = Math.degrees(Math.atan2(ey - y, ex - x)),
             nrot = (rot - angle + 360) % 360;
-        console.log(nrot);
         if (nrot > 90 && nrot < 270)
             actions.push('turn left');
         else
